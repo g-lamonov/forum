@@ -1,6 +1,6 @@
 <template>
-	<div class='modal_window__overlay' :class='{"modal_window--show": internalShowModal}' @click.self='hideModal'>
-		<div class='modal_window' :class='{"modal_window--show": internalShowModal}'>
+	<div class='modal_window__overlay' :class='{"modal_window--show": showModal}' @click.self='hideModal'>
+		<div class='modal_window' :class='{"modal_window--show": showModal}' v-on:hideModal='hideModal'>
 			<slot></slot>
 		</div>
 	</div>
@@ -9,26 +9,28 @@
 <script>
 	export default {
 		name: 'ModalWindow',
-		props: ['showModal'],
+		props: ['value'],
 		data () {
 			return {
-				internalShowModal: this.showModal
+				showModal: this.value
 			}
 		},
 		methods: {
 			hideModal () {
-				this.internalShowModal = false;
+				this.showModal = false;
+				this.$emit('input', this.showModal)
 			}
 		},
 		mounted () {
-			this.$watch('showModal', function(newVal) {
-				this.internalShowModal = newVal;
+			this.$watch('value', function(newVal) {
+				this.showModal = newVal;
 			});
 		}
 	}
 </script>
 
 <style lang='scss' scoped>
+	@import '../assets/scss/variables.scss';
 	.modal_window__overlay {
 		width: 100%;
 		height: 100%;
@@ -53,6 +55,7 @@
 		background-color: #fff;
 		margin-top: -3rem;
 		opacity: 0;
+		border: 0.125rem solid $color__gray--darkest;
 		pointer-events: none;
 		transition: margin-top 0.3s, opacity 0.3s;
 		@at-root #{&}--show {

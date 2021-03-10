@@ -1,14 +1,29 @@
 <template>
 	<div id='app'>
+		<modal-window v-model='loginSignupModalVisible'>
+			<tab-view :tabs='["Sign up", "Login"]'>
+				<div slot='first'>
+					<fancy-input v-model='signup.username' placeholder='Username'></fancy-input>
+				</div>
+				<div slot='second'>
+					text 2<br/>
+					text 2<br/>
+					text 2<br/>
+					text 2<br/>
+					text 2<br/>
+					text 2<br/>
+				</div>
+			</tab-view>
+		</modal-window>
 		<header class='header'>
 			<div class='header__group'>
 				<div class='logo'>{{meta.name}}</div>
 			</div>
 			<div class='header__group'>
-				<div class='button button--green'>
+				<div class='button button--green' @click='showLoginSignupModal("signup")'>
 					Sign up
 				</div>
-				<div class='button'>
+				<div class='button' @click='showLoginSignupModal("login")'>
 					Login
 				</div>
 				<div class='search' tabindex='0'>
@@ -22,15 +37,31 @@
 </template>
 
 <script>
+window.MODAL_TAB = 0;
+	import ModalWindow from './components/ModalWindow'
+	import TabView from './components/TabView'
+	import FancyInput from './components/FancyInput'
 	export default {
 		name: 'app',
 		components: {
+			ModalWindow,
+			TabView,
+			FancyInput
 		},
 		data () {
 			return {
 				meta: {
 					name: 'Forum'
-				}
+				},
+				signup: {
+					username: '',
+				},
+				loginSignupModalVisible: true
+			}
+		},
+		methods: {
+			showLoginSignupModal () {
+				this.loginSignupModalVisible = false;
 			}
 		}
 	}
@@ -94,6 +125,18 @@
 			border-color: $color__orange--primary;
 			&:hover { border-color: $color__orange--darker; }
 			&:active { border-color: $color__orange--darkest; }
+		}
+	}
+	.input {
+		border: 0.125rem solid $color__gray--primary;
+		@include text;
+		padding: 0.25rem;
+		outline: none;
+		&:hover {
+			border-color: $color__gray--darker;
+		}
+		&:focus {
+			border-color: $color__gray--darkest;
 		}
 	}
 	.search {
