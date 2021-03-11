@@ -7,7 +7,7 @@
 		<div class='select_button__options' :class='{"select_button__options--hidden": hideMenu}'>
 			<div
 				v-for='(option, index) in options'
-                v-bind:key="option"
+				v-bind:key="option"
 				@click='select(index)'
 				class='select_button__option'
 			>
@@ -20,13 +20,17 @@
 <script>
 	export default {
 		name: 'SelectButton',
-		props: ['options', 'value'],
+		props: ['options', 'value', 'name'],
 		data () {
-			//If value prop is an item of options prop,
-			//use that as the default option
-			var index = this.options.indexOf(this.value);
-			//Otherwise just use the first item
-			if(index === -1) index = 0;
+			var self = this;
+			var index = 0;
+			if(this.value !== null) {
+				this.options.forEach((option, i) => {
+					if(option.value === self.value) {
+						index = i;
+					}
+				})
+			}
 			return {
 				selectedIndex: index,
 				hideMenu: true
@@ -39,7 +43,7 @@
 			select (index) {
 				this.selectedIndex = index;
 				this.hideMenu = true;
-				this.$emit('input', this.options[index]);
+				this.$emit('input', this.options[index].value);
 			}
 		}
 	}

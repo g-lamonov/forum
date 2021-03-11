@@ -1,58 +1,41 @@
 <template>
-	<div class='index'>
-		<div class='thread_sorting'>
-			<select-button style='margin-right: 1rem' v-model='selected' :options='categories'></select-button>
-			<div class='button button--orange'>New</div>
-			<div class='button'>Most active</div>
-			<div class='button'>No replies</div>
+	<div class='fancy_input'>
+		<div
+			class='fancy_input__placeholder'
+			:class='{"fancy_input__placeholder--active": active || value.length}'
+		>
+			{{placeholder}}
 		</div>
-		<table class='threads'>
-			<colgroup>
-				<col span="1" style="width: 50%;">
-				<col span="1" style="width: 22.5%;">
-				<col span="1" style="width: 22.5%;">
-				<col span="1" style="width: 5%;">
-			</colgroup>
-			<thead>
-				<tr class='thread thread--header'>
-					<th>Title</th>
-					<th>Latest post</th>
-					<th>Category</th>
-					<th>Replies</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr class='thread'>
-					<td>Thread title</td>
-					<td>
-						<div>User</div>
-						<div>09/03/2021 02:07</div>
-					</td>
-					<td>Category</td>
-					<td>21</td>
-				</tr>
-			</tbody>
-		</table>
+		<input
+			v-bind:type='type || "text"'
+			class='input'
+			v-bind:value='value'
+			v-bind:style='{width: width || "10rem"}'
+			v-on:input='updateValue($event.target.value)'
+			@focus='addActive'
+			@blur='removeActive'
+		>
 	</div>
 </template>
 
 <script>
-	import SelectButton from '../SelectButton'
 	export default {
-		name: 'index',
-		components: {
-			SelectButton,
-		},
+		name: 'FancyInput',
+		props: ['value', 'placeholder', 'width', 'type'],
 		data () {
-			var categories = [
-				{ name: 'All categories', value: '1' },
-				{ name: 'Photography', value: '1' },
-				{ name: 'Baking', value: '1' },
-				{ name: 'Maps', value: '1' }
-			];
 			return {
-				selected: null,
-				categories
+				active: false
+			}
+		},
+		methods: {
+			updateValue (val) {
+				this.$emit('input', val);
+			},
+			addActive () {
+				this.active = true;
+			},
+			removeActive () {
+				this.active = false;
 			}
 		}
 	}
@@ -60,48 +43,23 @@
 
 <style lang='scss' scoped>
 	@import '../../assets/scss/variables.scss';
-	.index {
-		width: 80%;
-		margin: 0 auto;
-		margin-top: 2rem;
-	}
-	.thread_sorting {
-		margin-bottom: 1rem;
-	}
-	.threads {
-		border-collapse: collapse;
-	}
-	.thread {
-		background-color: #fff;
-		padding: 0.5rem 0;
-		cursor: default;
-		text-align: left;
-		transition: background-color 0.2s;
-		&:hover {
-			background-color: $color__lightgray--primary;
-		}
-		td, th {
-			padding: 0 0.5rem;
-		}
-		@at-root #{&}--header {
-			&:hover {
-				background-color: #fff;
+	.fancy_input {
+		position: relative;
+		margin-top: 0.25rem;
+		margin-bottom: 0.5rem;
+		@at-root #{&}__placeholder {
+			position: absolute;
+			top: 0.35rem;
+			background-color: #fff;
+			left: 0.35rem;
+			color: $color__gray--darkest;
+			pointer-events: none;
+			transition: top 0.2s, font-size 0.2s;
+			@at-root #{&}--active {
+				top: -0.5rem;
+				font-size: 0.75rem;
+				transition: top 0.2s, font-size 0.2s;
 			}
-			th {
-				font-weight: 400;
-				padding-bottom: 0.25rem;
-				border-bottom: thin solid $color__lightgray--darkest;
-			}
-		}
-		@at-root #{&}__section {
-			padding: 0 0.5rem;
-		}
-		@at-root #{&}__user {
-			display: inline-block;
-		}
-		@at-root #{&}__date {
-			color: $color__text--secondary;
-			display: inline-block;
 		}
 	}
 </style>
