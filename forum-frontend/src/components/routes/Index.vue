@@ -1,41 +1,82 @@
 <template>
-	<div class='fancy_input'>
-		<div
-			class='fancy_input__placeholder'
-			:class='{"fancy_input__placeholder--active": active || value.length}'
-		>
-			{{placeholder}}
+	<div class='route_container'>
+		<div class='thread_sorting'>
+			<select-button style='margin-right: 1rem' v-model='selectedCategory' :options='categories'></select-button>
+			<select-options :options='options' name='filterOptions'></select-options>
 		</div>
-		<input
-			v-bind:type='type || "text"'
-			class='input'
-			v-bind:value='value'
-			v-bind:style='{width: width || "10rem"}'
-			v-on:input='updateValue($event.target.value)'
-			@focus='addActive'
-			@blur='removeActive'
-		>
+		<table class='threads'>
+			<colgroup>
+				<col span="1" style="width: 50%;">
+				<col span="1" style="width: 22.5%;">
+				<col span="1" style="width: 22.5%;">
+				<col span="1" style="width: 5%;">
+			</colgroup>
+			<thead>
+				<tr class='thread thread--header'>
+					<th>Title</th>
+					<th>Latest post</th>
+					<th>Category</th>
+					<th>Replies</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class='thread' v-for='thread in threads' :key='thread' @click='navigateToThread(thread.slug, thread.id)'>
+					<td>{{thread.title}}</td>
+					<td>
+						<div>{{thread.latestPostUser}}</div>
+						<div>{{thread.latestPostDate | formatDate('time|date', ' - ') }}</div>
+					</td>
+					<td>{{thread.category}}</td>
+					<td>{{thread.replies}}</td>
+				</tr>
+				<tr class='thread' v-if='!threads.length' colspan='4'>
+					<td colspan='4' class='thread--empty'>No threads or posts.</td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 </template>
 
 <script>
+	import SelectButton from '../SelectButton'
+	// import TabView from '../TabView'
+	import SelectOptions from '../SelectOptions'
 	export default {
-		name: 'FancyInput',
-		props: ['value', 'placeholder', 'width', 'type'],
+		name: 'index',
+		components: {
+			SelectButton,
+			// TabView,
+			SelectOptions
+		},
 		data () {
 			return {
-				active: false
+				options: [
+					{name: 'New', value: 'NEW'},
+					{name: 'Most active', value: 'MOST_ACTIVE'},
+					{name: 'No replies', value: 'NO_REPLIES'}
+				],
+				selected: null
+			}
+		},
+		computed: {
+			threads () {
+				return this.$store.getters.filteredThreads;
+			},
+			categories () {
+				return this.$store.state.meta.categories
+			},
+			selectedCategory: {
+				get () {
+					return this.$store.state.index.selectedCategory;
+				},
+				set (category) {
+					this.$store.commit('selectCategory', category);
+				}
 			}
 		},
 		methods: {
-			updateValue (val) {
-				this.$emit('input', val);
-			},
-			addActive () {
-				this.active = true;
-			},
-			removeActive () {
-				this.active = false;
+			navigateToThread (slug, id) {
+				this.$router.push('thread/' + slug + '/' + id);
 			}
 		}
 	}
@@ -43,23 +84,56 @@
 
 <style lang='scss' scoped>
 	@import '../../assets/scss/variables.scss';
-	.fancy_input {
-		position: relative;
-		margin-top: 0.25rem;
-		margin-bottom: 0.5rem;
-		@at-root #{&}__placeholder {
-			position: absolute;
-			top: 0.35rem;
-			background-color: #fff;
-			left: 0.35rem;
-			color: $color__gray--darkest;
-			pointer-events: none;
-			transition: top 0.2s, font-size 0.2s;
-			@at-root #{&}--active {
-				top: -0.5rem;
-				font-size: 0.75rem;
-				transition: top 0.2s, font-size 0.2s;
+	.thread_sorting {
+		margin-bottom: 1rem;
+	}
+	.threads {
+		border-collapse: collapse;
+	}
+	.thread {
+		background-color: #fff;
+		padding: 0.5rem 0;
+		cursor: default;
+		text-align: left;
+		transition: background-color 0.2s;
+		&:hover {
+			background-color: $color__lightgray--primary;
+		}
+		td, th {
+			padding: 0.3rem 0.5rem;
+			border-bottom: solid thin $color__lightgray--primary;
+		}
+		@at-root #{&}--header {
+			&:hover {
+				background-color: #fff;
 			}
+			th {
+				font-weight: 400;
+				padding-bottom: 0.25rem;
+				border-bottom: thin solid $color__lightgray--darkest;
+			}
+		}
+		@at-root #{&}--empty {
+			height: 5rem;
+			text-align: center;
+			font-size: 2rem;
+			user-select: none;
+			cursor: default;
+			transition: none;
+			&:hover {
+				transition: none;
+				background-color: #fff;
+			}
+		}
+		@at-root #{&}__section {
+			padding: 0 0.5rem;
+		}
+		@at-root #{&}__user {
+			display: inline-block;
+		}
+		@at-root #{&}__date {
+			color: $color__text--secondary;
+			display: inline-block;
 		}
 	}
 </style>
