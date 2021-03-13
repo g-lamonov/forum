@@ -4,8 +4,10 @@ import Vuex from 'vuex'
 
 import App from './App'
 import store from './store/index'
+
 import Index from './components/routes/Index'
 import Thread from './components/routes/Thread'
+
 Vue.use(VueRouter)
 Vue.use(Vuex)
 
@@ -42,6 +44,7 @@ Vue.filter('formatDate', function (value, format = '', join = ' ') {
 
 	return format.split('|').map(formatSegment).join(join);
 });
+
 new Vue({
 	render: h => h(App),
 	template: '<App/>',

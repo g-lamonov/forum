@@ -1,7 +1,7 @@
 <template>
 	<div id='app'>
 		<modal-window name='account'>
-			<tab-view :tabs='["Sign up", "Login"]' name="account">
+			<tab-view :tabs='["Sign up", "Login"]' name="account" padding='true'>
 				<template slot='Sign up'>
 					<p style='margin-top: 0;'>
 						Sign up to create and post in threads.
@@ -62,7 +62,7 @@
 		</modal-window>
 		<header class='header'>
 			<div class='header__group'>
-				<div class='logo'>{{name}}</div>
+				<div class='logo' @click='$router.push("/")'>{{name}}</div>
 			</div>
 			<div class='header__group'>
 				<div class='button button--green' @click='showAccountModal(0)'>
@@ -122,7 +122,7 @@
 			},
 			cancel () {
 				this.$store.commit('hideModal', 'account');
-			}
+			},
 		}
 	}
 </script>
@@ -155,6 +155,7 @@
 		padding: 1rem 2rem;
 		position: fixed;
 		top: 0;
+		z-index: 2;
 		background-color: #fff;
 		display: flex;
 		align-items: center;
@@ -169,6 +170,7 @@
 	}
 	.logo {
 		@include text($font--role-emphasis, 2rem, normal);
+		cursor: pointer;
 	}
 	.button {
 		border: 0.125rem solid $color__gray--primary;

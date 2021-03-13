@@ -1,18 +1,21 @@
-  
 <template>
 	<div class='tab_view'>
-		<div class='tab_view__tabs'>
+		<div class='tab_view__tabs' :class='{"tab_view__tabs--small_tabs": smallTabs}'>
 			<div
 				class='tab_view__tab'
 				v-for='(tab, index) in tabs'
-				v-bind:key="tab"
-				:class='{"tab_view__tab--selected": tabIndex === index}'
+				:key='tab'
+				:class='{
+					"tab_view__tab--selected": tabIndex === index,
+					"tab_view__tab--selected_small_tabs": tabIndex === index && smallTabs,
+					"tab_view__tab--small_tabs": smallTabs
+				}'
 				@click='changeTab(index)'
 			>
 				{{tab}}
 			</div>
 		</div>
-		<div class='tab_view__content'>
+		<div class='tab_view__content' :class='{"tab_view__content--padding": padding}'>
 			<slot
 				v-for='(tab) in tabs'
 				:name='tab'
@@ -26,12 +29,12 @@
 	// import mapGetters from 'vuex';
 	export default {
 		name: 'TabView',
-		props: ['tabs', 'name'],
+		props: ['tabs', 'name', 'padding', 'small-tabs'],
 		methods: {
 			changeTab (index) {
 				this.$store.commit({
 					type: 'setTab',
-					tab: 'account',
+					tab: this.name,
 					index: index
 				});
 			}
@@ -49,10 +52,15 @@
 	.tab_view {
 		@at-root #{&}__tabs {
 			display: flex;
+			@at-root #{&}--small_tabs {
+				background-color: $color__gray--primary;
+				border-bottom: thin solid $color__gray--darker;
+			}
 		}
 		@at-root #{&}__tab {
 			flex-grow: 1;
 			text-align: center;
+			position: relative;
 			cursor: pointer;
 			font-weight: 400;
 			padding: 0.5rem 0;
@@ -73,10 +81,32 @@
 					background-color: #fff;
 				}
 			}
+			@at-root #{&}--selected_small_tabs {
+				border: thin solid $color__gray--darker;
+				
+				&::after {
+					content: '';
+					position: absolute;
+					background-color: #fff;
+					width: 100%;
+					bottom: -1px;
+					left: 0;
+					height: 1px;
+				}
+			}
+			@at-root #{&}--small_tabs {
+				flex-grow: 0;
+				border-bottom: 0;
+				margin: 0 0.25rem;
+				padding: 0.5rem;
+				margin-top: 0.25rem;
+			}
 		}
 		@at-root #{&}__content {
 			background-color: #fff;
-			padding: 1rem;
+			@at-root #{&}--padding {
+				padding: 1rem;
+			}
 		}
 	}
 </style>
