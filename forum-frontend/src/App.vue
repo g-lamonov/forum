@@ -122,7 +122,7 @@
 			},
 			cancel () {
 				this.$store.commit('hideModal', 'account');
-			},
+			}
 		}
 	}
 </script>
@@ -170,6 +170,7 @@
 	}
 	.logo {
 		@include text($font--role-emphasis, 2rem, normal);
+		@include user-select(none);
 		cursor: pointer;
 	}
 	.button {
