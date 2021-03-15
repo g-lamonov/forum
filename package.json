@@ -4,18 +4,25 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "cross-env NODE_ENV=test && node ./node_modules/mocha/bin/mocha  --harmony --timeout 30000",
     "start": "node index.js"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
+    "chai": "^4.3.4",
     "cookie-parser": "~1.4.4",
+    "cross-env": "^7.0.3",
     "debug": "~2.6.9",
     "express": "^4.16.4",
     "http-errors": "~1.6.3",
+    "indicative": "^7.4.4",
     "jade": "~1.11.0",
     "morgan": "^1.9.1",
     "pg": "^8.5.1",
     "sequelize": "^6.5.0"
+  },
+  "devDependencies": {
+    "chai-http": "^4.3.0",
+    "mocha": "^8.3.2"
   }
 }
