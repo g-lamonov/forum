@@ -1,7 +1,7 @@
 let express = require('express')
 let app = express()
 
-let config = require('./config/config.json')
+let config = require('./config/server.js')
 
 
 //Middle-ware
