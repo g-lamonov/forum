@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-    }ф
+    }
   };
   User.init({
     username: {
@@ -20,6 +20,10 @@ module.exports = (sequelize, DataTypes) => {
 		},
     password: DataTypes.STRING,
     hash: DataTypes.STRING,
+		admin: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false
+		}
   }, {
     sequelize,
     modelName: 'User',

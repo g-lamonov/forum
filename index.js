@@ -1,6 +1,8 @@
 let express = require('express')
 let app = express()
 
+let sequelize = require('./models').sequelize
+
 let config = require('./config/server.js')
 
 //Middle-ware
@@ -26,9 +28,20 @@ if(process.env.NODE_ENV === 'production') {
 }
 
 app.use('/api/v1/user', require('./routes/user'))
+app.use('/api/v1/admin_token', require('./routes/admin_token'))
+app.use('/api/v1/category', require('./routes/category'))
 
-app.listen(config.port, () => {
-	console.log('Listening on ' + config.port)
-})
+sequelize
+	.sync({ force: true })
+	.then(() => {
+		app.listen(config.port, () => {
+			console.log('Listening on ' + config.port)
+			app.locals.appStarted = true
+			app.emit('appStarted')
+		})
+	})
+	.catch((err) => {
+		console.log(err)
+	})
 
 module.exports = app
