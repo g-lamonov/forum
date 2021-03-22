@@ -22,7 +22,7 @@
     "marked": "^2.0.1",
     "morgan": "^1.9.1",
     "pg": "^8.5.1",
-    "sequelize": "^6.5.0"
+    "sequelize": "^4.44.4"
   },
   "devDependencies": {
     "chai-http": "^4.3.0",
