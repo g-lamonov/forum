@@ -6,7 +6,18 @@ import App from './App'
 import store from './store/index'
 
 import Index from './components/routes/Index'
+import Start from './components/routes/Start'
+import Category from './components/routes/Category'
 import Thread from './components/routes/Thread'
+import ThreadNew from './components/routes/ThreadNew'
+import Admin from './components/routes/Admin'
+import AdminDashboard from './components/routes/AdminDashboard'
+import AdminUsers from './components/routes/AdminUsers'
+import AdminSettings from './components/routes/AdminSettings'
+
+import onResize from './assets/js/flexBoxGridCorrect'
+
+onResize('.index_categories', 'index_category');
 
 Vue.use(VueRouter)
 Vue.use(Vuex)
@@ -14,11 +25,18 @@ Vue.use(Vuex)
 const router = new VueRouter({
 	routes: [
 		{ path: '/', component: Index },
-		{ path: '/thread/:slug/:id', component: Thread }
+		{ path: '/start', component: Start },
+		{ path: '/category/:category', component: Category },
+		{ path: '/thread/:slug/:id', component: Thread },
+		{ path: '/thread/new', component: ThreadNew },
+		{ path: '/admin', redirect: '/admin/dashboard', component: Admin, children: [
+			{ path: 'dashboard', component: AdminDashboard },
+			{ path: 'settings', component: AdminSettings },
+			{ path: 'users', component: AdminUsers }
+		] }
 	],
 	mode: 'history'
 })
-
 Vue.filter('formatDate', function (value, format = '', join = ' ') {
 	//Add leading zero if under 10
 	function lz(num) {

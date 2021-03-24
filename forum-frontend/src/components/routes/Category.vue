@@ -36,19 +36,19 @@
 					<td colspan='4' class='thread--empty'>No threads or posts.</td>
 				</tr>
 			</tbody>
-		</div>
+		</table>
 	</div>
 </template>
 
 <script>
 	import SelectButton from '../SelectButton'
-	import TabView from '../TabView'
+	// import TabView from '../TabView'
 	import SelectOptions from '../SelectOptions'
 	export default {
 		name: 'index',
 		components: {
 			SelectButton,
-			TabView,
+			// TabView,
 			SelectOptions
 		},
 		data () {
