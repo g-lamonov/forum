@@ -39,7 +39,9 @@ function addFlexBoxChildren(parentString, childClass) {
 		container.appendChild(div);
 	}
 
-
+	//If there are no divs
+	if(!getChildren().length) return;
+	
 	if(!lastTwoChildrenOnSameLine()) {
 		addChild();
 	}

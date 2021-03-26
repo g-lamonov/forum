@@ -1,48 +1,19 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import index from './modules/index'
-import category from './modules/category'
 import thread from './modules/thread'
-import admin from './modules/admin'
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
 	state: {
 		meta: {
-			name: 'Forum',
-			categories: [
-				{name: 'All categories', value: 'ALL'},
-				{name: 'Technology', value: 'TECHNOLOGY'},
-				{name: 'Food', value: 'FOOD'},
-				{name: 'Programming', value: 'PROGRAMMING'},
-				{name: 'Books', value: 'BOOKS'}
-			]
+			name: '',
+			categories: []
 		},
-		tabs: {
-			account: 0,
-			thread: 0,
-			'new-thread': 0
-		},
-		selectOptions: {
-			filterOptions: 'NEW'
-		},
-		modals: {
-			account: false,
-			'thread_editor--picture': false,
-			'thread_editor--link': false
-		},
-		editors: {
-			thread: {
-				value: '',
-				visible: false
-			},
-			'new-thread': {
-				value: '',
-				visible: true
-			}
-		}
+		accountTabs: 0,
+		accountModal: false,
+		username: ''
 	},
 	getters: {
 		categoriesWithoutAll (state) {
@@ -57,29 +28,15 @@ export default new Vuex.Store({
 		}
 	},
 	mutations: {
-		setTab (state, payload) {
-			state.tabs[payload.tab] = payload.index;
-		},
-		setEditor (state, payload) {
-			state.editors[payload.name].value = payload.value;
-		},
-		showEditor (state, payload) {
-			state.editors[payload.name].visible = payload.value;
+		setAccountTabs (state, index) {
+			state.accountTabs = index;
 		},
 		setSelectOptions (state, payload) {
 			state.selectOptions[payload.name] = payload.value;
 		},
-		showModal (state, modal) {
-			state.modals[modal] = true;
-		},
-		hideModal (state, modal) {
-			state.modals[modal] = false;
+		setAccountModalState (state, value) {
+			state.accountModal = value;
 		}
 	},
-	modules: {
-		index,
-		category,
-		thread,
-		admin
-	}
+	modules: { thread }
 })

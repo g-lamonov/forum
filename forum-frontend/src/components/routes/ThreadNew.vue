@@ -3,7 +3,7 @@
 		<div class='h1'>Post new thread</div>
 		<span class='select_button_text'>Post in category:</span>
 		<select-button v-model='selectedCategory' :options='categories'></select-button>
-		<input-editor name='new-thread' :hide-close='true' style='margin-top: 1rem'></input-editor>
+		<input-editor v-model='editor' :show='true' :hide-close='true' style='margin-top: 1rem'></input-editor>
 		<button class='button button--green submit'>Post thread</button>
 	</div>
 </template>
@@ -20,7 +20,8 @@
 		},
 		data () {
 			return {
-				selectedCategory: this.$store.state.category.selectedCategory
+				selectedCategory: this.$store.state.category.selectedCategory,
+				editor: ''
 			}
 		},
 		computed: {
@@ -43,4 +44,4 @@
 	.submit {
 		margin-top: 1rem;
 	}
-</style> 
+</style>

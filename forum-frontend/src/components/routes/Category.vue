@@ -3,7 +3,7 @@
 		<div class='thread_sorting'>
 			<div>
 				<select-button style='margin-right: 1rem' v-model='selectedCategory' :options='categories'></select-button>
-				<select-options :options='options' name='filterOptions'></select-options>
+				<select-options :options='filterOptions' v-model='selectedFilterOption'></select-options>
 			</div>
 			<button class='button' @click='$router.push("/thread/new")'>Post new thread</button>
 		</div>
@@ -23,7 +23,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr class='thread' v-for='thread in threads' :key='thread' @click='navigateToThread(thread.slug, thread.id)'>
+				<tr class='thread' v-for='thread in filteredThreads' :key='thread' @click='navigateToThread(thread.slug, thread.id)'>
 					<td>{{thread.title}}</td>
 					<td>
 						<div>{{thread.latestPostUser}}</div>
@@ -32,7 +32,7 @@
 					<td>{{thread.category}}</td>
 					<td>{{thread.replies}}</td>
 				</tr>
-				<tr class='thread' v-if='!threads.length' colspan='4'>
+				<tr class='thread' v-if='!filteredThreads.length' colspan='4'>
 					<td colspan='4' class='thread--empty'>No threads or posts.</td>
 				</tr>
 			</tbody>
@@ -53,28 +53,45 @@
 		},
 		data () {
 			return {
-				options: [
+				filterOptions: [
 					{name: 'New', value: 'NEW'},
 					{name: 'Most active', value: 'MOST_ACTIVE'},
 					{name: 'No replies', value: 'NO_REPLIES'}
 				],
-				selected: null
+				selectedFilterOption: 'NEW',
+				selectedCategory: this.$route.params.category.toUpperCase(),
+				threads: []
 			}
 		},
 		computed: {
-			threads () {
-				return this.$store.getters.filteredThreads;
+			filteredThreads () {
+				var categories = {};
+				var filter = this.selectedFilterOption
+				this.$store.state.meta.categories.forEach(category => {
+					categories[category.value] = category.name;
+				});
+				return this.threads.filter(thread => {
+					return (thread.category === this.selectedCategory) || (this.selectedCategory === 'ALL');
+				}).map(thread => {
+					var _thread = Object.assign({}, thread);
+					_thread.category = categories[thread.category];
+					return _thread;
+				}).sort((a, b) => {
+					if(filter === 'NEW') {
+						return a.latestPostDate - b.latestPostDate;
+					} else if(filter === 'MOST_ACTIVE') {
+						return b.replies - a.replies;
+					}
+				}).filter(thread => {
+					if(filter === 'NO_REPLIES') {
+						return !thread.replies;
+					} else {
+						return true;
+					}
+				});
 			},
 			categories () {
 				return this.$store.state.meta.categories
-			},
-			selectedCategory: {
-				get () {
-					return this.$store.state.category.selectedCategory;
-				},
-				set (category) {
-					this.$store.commit('selectCategory', category);
-				}
 			}
 		},
 		methods: {
@@ -86,9 +103,6 @@
 			selectedCategory (newValue) {
 				this.$router.push('/category/' + newValue.toLowerCase());
 			}
-		},
-		mounted () {
-			this.selectedCategory = this.$route.params.category.toUpperCase();
 		}
 	}
 </script>
@@ -149,4 +163,4 @@
 			display: inline-block;
 		}
 	}
-</style> 
+</style>

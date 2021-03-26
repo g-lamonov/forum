@@ -6,9 +6,15 @@
 				First create your admin account for the forum.
 			</p>
 			<div>
-				<fancy-input v-model='username' width='100%' placeholder='Username'></fancy-input>
-				<fancy-input v-model='password' width='100%' placeholder='Password' type='password'></fancy-input>
-				<fancy-input v-model='confirmPassword' width='100%' placeholder='Confirm password' type='password'></fancy-input>
+				<fancy-input v-model='username' :error='errors.username' width='100%' placeholder='Username'></fancy-input>
+				<fancy-input v-model='password' :error='errors.password' width='100%' placeholder='Password' type='password'></fancy-input>
+				<fancy-input
+					v-model='confirmPassword'
+					:error='errors.confirmPassword'
+					width='100%'
+					placeholder='Confirm password'
+					type='password'
+				></fancy-input>
 				<button style='width: 100%;' class='button button--green' @click='createAccount'>Create account</button>
 			</div>
 		</div>
@@ -42,7 +48,12 @@
 				forumName: '',
 				forumDescription: '',
 				categories: '',
-				panel: 1
+				panel: 1,
+				errors: {
+					username: '',
+					password: '',
+					confirmPassword: ''
+				}
 			}
 		},
 		components: {
@@ -51,8 +62,18 @@
 		},
 		computed: {},
 		methods: {
+			clearErrors () {
+				this.errors.username = ''
+				this.errors.password = ''
+				this.errors.confirmPassword = ''
+			},
 			createAccount () {
-				this.panel = 2
+				this.clearErrors()
+				if(this.password !== this.confirmPassword) {
+					this.errors.confirmPassword =  'Passwords must match!'
+				} else {
+					this.panel = 2
+				}
 			}
 		}
 	}

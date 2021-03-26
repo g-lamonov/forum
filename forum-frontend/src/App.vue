@@ -1,7 +1,7 @@
 <template>
 	<div id='app'>
-		<modal-window name='account'>
-			<tab-view :tabs='["Sign up", "Login"]' name="account" padding='true'>
+		<modal-window v-model='showAccountModal'>
+			<tab-view :tabs='["Sign up", "Login"]' v-model="showAccountTab" padding='true'>
 				<template slot='Sign up'>
 					<p style='margin-top: 0;'>
 						Sign up to create and post in threads.
@@ -65,10 +65,10 @@
 				<div class='logo' @click='$router.push("/")'>{{name}}</div>
 			</div>
 			<div class='header__group'>
-				<div class='button button--green' @click='showAccountModal(0)'>
+				<div class='button button--green' @click='showAccountModalTab(0)'>
 					Sign up
 				</div>
-				<div class='button' @click='showAccountModal(1)'>
+				<div class='button' @click='showAccountModalTab(1)'>
 					Login
 				</div>
 				<div class='search' tabindex='0'>
@@ -109,20 +109,26 @@
 		computed: {
 			name () {
 				return this.$store.state.meta.name
+			},
+			showAccountModal: {
+				get () { return this.$store.state.accountModal },
+				set (val) {
+					this.$store.commit('setAccountModalState', val);
+				}
+			},
+			showAccountTab : {
+				get () { return this.$store.state.accountTabs },
+				set (index) { this.$store.commit('setAccountTabs', index) }
 			}
 		},
 		methods: {
-			showAccountModal (index) {
-				this.$store.commit('showModal', 'account');
-				this.$store.commit({
-					type: 'setTab',
-					tab: 'account',
-					index: index
-				});
+			showAccountModalTab (index) {
+				this.showAccountModal = true
+				this.showAccountTab = index
 			},
 			cancel () {
-				this.$store.commit('hideModal', 'account');
-			}
+				this.showAccountModal = false
+			},
 		}
 	}
 </script>

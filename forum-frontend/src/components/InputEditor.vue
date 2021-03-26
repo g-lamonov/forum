@@ -4,24 +4,24 @@
 		:class='{
 			"input_editor--focus": focused,
 			"input_editor--float": float,
-			"input_editor--hidden": !visible
+			"input_editor--hidden": !show
 		}'
 	>
 		<div class='input_editor__reply_username' v-if='replyUsername'>Replying to <strong>{{replyUsername}}</strong></div>
 		<div class='input_editor__close input_editor__format_button' @click='closeEditor' v-if='!hideClose'>&times;</div>
-		<tab-view :tabs='["Editor", "Preview"]' :name='name' small-tabs='true'>
+		<tab-view :tabs='["Editor", "Preview"]' v-model='showTab' small-tabs='true'>
 			<template slot='Editor'>
 				<div class='input_editor__format_bar'>
 					<div class='input_editor__format_button' @click='replaceSelectedText("**", "**")'>B</div>
 					<div class='input_editor__format_button' @click='replaceSelectedText("*", "*")'>I</div>
-					<div class='input_editor__format_button' @click='showLinkModal("thread_editor--link")'><span class='fa fa-link'></span></div>
+					<div class='input_editor__format_button' @click='setModalState("link", true)'><span class='fa fa-link'></span></div>
 					<div class='input_editor__format_button' @click='formatCode'><span class='fa fa-code'></span></div>
-					<div class='input_editor__format_button' @click='showModal("thread_editor--picture")'><span class='fa fa-picture-o'></span></div>
+					<div class='input_editor__format_button' @click='setModalState("image", true)'><span class='fa fa-picture-o'></span></div>
 				</div>
 				<textarea
 					class='input_editor__input'
 					ref='textarea'
-					:value='editor'
+					:value='value'
 					@input='setEditor($event.target.value)'
 					@focus='focusEditor(true)'
 					@blur='focusEditor(false)'
@@ -32,7 +32,7 @@
 
 			<div slot='Preview' class='input_editor__markdownHTML'>
 				<div v-html='markdownHTML' style='margin-top: -0.5rem;'></div>
-				<div v-if='!editor.trim().length' class='input_editor__markdownHTML--empty'>
+				<div v-if='!value.trim().length' class='input_editor__markdownHTML--empty'>
 					Nothing to preview
 				</div>
 			</div>
@@ -42,7 +42,7 @@
 			<button class='button' @click='submit'>Submit</button>
 		</div>
 
-		<modal-window name='thread_editor--link'>
+		<modal-window v-model='linkModalVisible'>
 			<div style='padding: 1rem;'>
 				<p style='margin-top: 0;'>
 					Enter the web address in the input box below
@@ -52,13 +52,13 @@
 				<button class='button' @click='addLink'>
 					OK
 				</button>
-				<button class='button' @click='hideLinkModal'>
+				<button class='button' @click='setModalState("link", false)'>
 					Cancel
 				</button>
 			</div>
 		</modal-window>
 
-		<modal-window name='thread_editor--picture'></modal-window>
+		<modal-window v-model='imageModalVisible'></modal-window>
 
 	</div>
 </template>
@@ -70,7 +70,7 @@
 	import Marked from 'marked'
 	export default {
 		name: 'InputEditor',
-		props: ['name', 'float', 'replyUsername', 'hideClose'],
+		props: ['value', 'float', 'replyUsername', 'hideClose', 'show'],
 		components: {
 			ModalWindow,
 			FancyInput,
@@ -80,63 +80,45 @@
 			return {
 				linkText: '',
 				linkURL: '',
-				focused: false
+				focused: false,
+				linkModalVisible: false,
+				imageModalVisible: false,
+				showTab: 0
 			}
 		},
 		computed: {
-			editor () {
-				return this.$store.state.editors[this.name].value;
-			},
-			visible () {
-				return this.$store.state.editors[this.name].visible;
-			},
 			markdownHTML () {
-				return Marked(this.editor);
+				return Marked(this.value);
 			}
 		},
 		methods: {
 			submit () {
-				if(this.editor.trim().length) {
+				if(this.value.trim().length) {
 					this.$emit('submit');
 				}
 			},
 			focusEditor (val) {
 				this.focused = val;
 			},
-			showImageModal () {
-				this.$store.commit('showModal', 'thread_editor--image');
-			},
-			hideImageModal () {
-				this.$store.commit('hideModal', 'thread_editor--image');
-			},
-			showLinkModal () {
-				this.$store.commit('showModal', 'thread_editor--link');
-				this.linkText = this.getSelectionData().val;
-			},
-			hideLinkModal () {
-				this.$store.commit('hideModal', 'thread_editor--link');
-				this.linkText = '';
-				this.linkURL = '';
+			setModalState (modal, state) {
+				if(modal === 'link') {
+					this.linkModalVisible = state
+					if(state) {
+						this.linkText = this.getSelectionData().val;
+					} else {
+						this.linkText = '';
+						this.linkURL = '';
+					}
+				} else if(modal === 'image') {
+					this.imageModalVisible = state
+				}
 			},
 			closeEditor () {
-				this.$store.commit({
-					type: 'showEditor',
-					name: this.name,
-					value: false
-				});
-				this.$store.commit({
-					type: 'setEditor',
-					name: this.name,
-					value: ''
-				});
+				this.setEditor('')
 				this.$emit('close')
 			},
 			setEditor (value) {
-				this.$store.commit({
-					type: 'setEditor',
-					name: this.name,
-					value: value
-				});
+				this.$emit('input', value)
 			},
 			getSelectionData () {
 				var el = this.$refs.textarea,
@@ -152,9 +134,9 @@
 				var selectionData = this.getSelectionData();
 				var el = this.$refs.textarea;
 				this.setEditor(
-					this.editor.slice(0, selectionData.start) +
+					this.value.slice(0, selectionData.start) +
 					before + selectionData.val + after +
-					this.editor.slice(selectionData.end)
+					this.value.slice(selectionData.end)
 				);
 				el.focus();
 				setTimeout(function() {
@@ -167,20 +149,20 @@
 				var selectionData = this.getSelectionData();
 				var el = this.$refs.textarea;
 				this.setEditor(
-					this.editor.slice(0, selectionData.start) +
+					this.value.slice(0, selectionData.start) +
 					'[' + this.linkText + '](' + this.linkURL + ')' +
-					this.editor.slice(selectionData.end)
+					this.value.slice(selectionData.end)
 				);
 				el.focus();
 				setTimeout(function() {
 					el.selectionStart = selectionData.start + 1;
 					el.selectionEnd = selectionData.start + 1 + linkTextLength;
 				}, 1);
-				this.hideLinkModal();
+				this.setModalState('link', false);
 			},
 			formatCode () {
 				var selectionData = this.getSelectionData();
-				if(this.editor[selectionData.start-1] === '\n' || selectionData.start === 0) {
+				if(this.value[selectionData.start-1] === '\n' || selectionData.start === 0) {
 					this.replaceSelectedText('    ', '');
 				} else {
 					this.replaceSelectedText('`', '`');
