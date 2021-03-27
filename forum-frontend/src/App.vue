@@ -1,5 +1,11 @@
 <template>
 	<div id='app'>
+		<modal-window v-model='showAjaxErrorsModal' style='z-index: 100'>
+			<div style='padding: 0rem 1rem 1rem 1rem;'>
+				<p v-for='error in this.$store.state.ajaxErrors' :key='error'>{{error}}</p>
+				<button class='button' @click='showAjaxErrorsModal = false'>OK</button>
+			</div>
+		</modal-window>
 		<modal-window v-model='showAccountModal'>
 			<tab-view :tabs='["Sign up", "Login"]' v-model="showAccountTab" padding='true'>
 				<template slot='Sign up'>
@@ -65,12 +71,19 @@
 				<div class='logo' @click='$router.push("/")'>{{name}}</div>
 			</div>
 			<div class='header__group'>
-				<div class='button button--green' @click='showAccountModalTab(0)'>
-					Sign up
-				</div>
-				<div class='button' @click='showAccountModalTab(1)'>
-					Login
-				</div>
+				<template v-if='$store.state.username'>
+					<div class='button' @click='logout'>
+						Log out
+					</div>
+				</template>
+				<template v-else>
+					<div class='button button--green' @click='showAccountModalTab(0)'>
+						Sign up
+					</div>
+					<div class='button' @click='showAccountModalTab(1)'>
+						Login
+					</div>
+				</template>
 				<div class='search' tabindex='0'>
 					<input class='search__field' placeholder='Search this forum'>
 					<button class='button button--borderless'><span class='fa fa-search'></span></button>
@@ -86,6 +99,7 @@
 	import TabView from './components/TabView'
 	import FancyInput from './components/FancyInput'
 	// import mapGetters from 'vuex'
+	import AjaxErrorHandler from './assets/js/errorHandler'
 	export default {
 		name: 'app',
 		components: {
@@ -116,6 +130,10 @@
 					this.$store.commit('setAccountModalState', val);
 				}
 			},
+			showAjaxErrorsModal: {
+				get () { return this.$store.state.ajaxErrorsModal },
+				set (val) { this.$store.commit('setAjaxErrorsModalState', val) }
+			},
 			showAccountTab : {
 				get () { return this.$store.state.accountTabs },
 				set (index) { this.$store.commit('setAccountTabs', index) }
@@ -126,9 +144,31 @@
 				this.showAccountModal = true
 				this.showAccountTab = index
 			},
+			logout () {
+				this.axios.post(
+					'/api/v1/user/' +
+					this.$store.state.username +
+					'/logout'
+				).then(() => {
+					this.$store.commit('setUsername', '')
+				}).catch(err => {
+					console.log(err)
+				})
+			},
 			cancel () {
 				this.showAccountModal = false
 			},
+		},
+		created () {
+			let ajaxErrorHandler = AjaxErrorHandler(this.$store)
+			this.axios.get('/api/v1/settings')
+				.then(res => {
+					this.$store.commit('setForumName', res.data.forumName)
+				}).catch(ajaxErrorHandler)
+			this.axios.get('/api/v1/category')
+				.then(res => {
+					this.$store.commit('addCategories', res.data)
+				}).catch(ajaxErrorHandler)
 		}
 	}
 </script>

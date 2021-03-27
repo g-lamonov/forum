@@ -8,14 +8,23 @@ router.get('/', async (req, res) => {
 	try {
 		let settings = await Settings.get()
 
+		if(!settings) throw Errors.noSettings
+
 		res.json(settings.toJSON())
 	} catch (e) {
-		res.status(500)
-		res.json({
-			errors: [Errors.unknown]
-		})
+		if(e === Errors.noSettings) {
+			res.status(500)
+			res.json({
+				errors: [e]
+			})
+		} else {
+			res.status(500)
+			res.json({
+				errors: [Errors.unknown]
+			})
+		}
 	}
-
+	
 })
 
 router.all('*', (req, res, next) => {
@@ -48,12 +57,16 @@ router.put('/', async (req, res) => {
 				params.forumDescription = req.body.forumDescription
 			}
 		}
-
+		
 		if(validationErrors.length) throw Errors.VALIDAITON_ERROR
 
 		let updatedSettings = await Settings.set(params)
-		res.json(updatedSettings.toJSON())
 
+		res.json({
+			forumName: req.body.forumName,
+			forumDescription: req.body.forumDescription
+		})
+		
 	} catch (e) {
 		if(e === Errors.VALIDAITON_ERROR) {
 			res.status(400)
@@ -61,6 +74,7 @@ router.put('/', async (req, res) => {
 				errors: [validationErrors]
 			})
 		} else {
+			console.log(e)
 			res.status(500)
 			res.json({
 				errors: [Errors.unknown]

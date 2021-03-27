@@ -1,7 +1,7 @@
 process.env.NODE_ENV = 'test'
 
 let chai = require('chai')
-let server = require('../index')
+let server = require('../server')
 let should = chai.should()
 
 let { sequelize } = require('../models')
@@ -14,7 +14,7 @@ chai.use(require('chai-things'))
 describe('Category', () => {
 	//Wait for app to start before commencing
 	before((done) => {
-        if(server.locals.appStarted) done()
+		if(server.locals.appStarted) done()
 
 		server.on('appStarted', () => {
 			done()
@@ -54,6 +54,17 @@ describe('Category', () => {
 			res.should.be.json
 			res.should.have.status(200)
 			res.body.should.have.property('name', 'category')
+		})
+		it('should have an "underscored" value field', async () => {
+			let res = await agent
+				.post('/api/v1/category')
+				.set('content-type', 'application/json')
+				.send({ name: ' 	another category here 	' })
+
+			res.should.be.json
+			res.should.have.status(200)
+			res.body.should.have.property('name', ' 	another category here 	')
+			res.body.should.have.property('value', 'ANOTHER_CATEGORY_HERE')
 		})
 		it('should return an error if category already exists', async () => {
 			try {
