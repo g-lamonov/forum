@@ -26,7 +26,14 @@
 					placeholder='Confirm password'
 					type='password'
 				></fancy-input>
-				<button style='width: 100%;' class='button button--green' @click='createAccount'>Create account</button>
+				<loading-button
+					style='width: 100%;'
+					class='button button--green'
+					:loading='loading'
+					@click='createAccount'
+				>
+					Create account
+				</loading-button>
 			</div>
 		</div>
 		<div v-show='panel === 2'>
@@ -48,7 +55,14 @@
 					width='100%'
 					placeholder='Forum description'
 				></fancy-textarea>
-				<button style='width: 100%;' class='button button--green' @click='addSettings'>Add settings</button>
+				<loading-button
+					style='width: 100%;'
+					class='button button--green'
+					:loading='loading'
+					@click='addSettings'
+				>
+					Add settings
+				</loading-button>
 			</div>
 		</div>
 		<div v-show='panel === 3'>
@@ -70,7 +84,13 @@
 						width='100%'
 						placeholder='Category name'
 					></fancy-input>
-					<button class='button button--green' @click='addCategory'>Add category</button>
+					<loading-button
+						class='button button--green'
+						:loading='loading'
+						@click='addCategory'
+					>
+						Add category
+					</loading-button>
 				</div>
 			</div>
 			<button style='width: 100%;' class='button button--green' @click='finish'>Finish</button>
@@ -81,6 +101,7 @@
 <script>
 	import FancyInput from '../FancyInput'
 	import FancyTextarea from '../FancyTextarea'
+	import LoadingButton from '../LoadingButton'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'start',
@@ -91,6 +112,7 @@
 				confirmPassword: '',
 				forumName: '',
 				forumDescription: '',
+				loading: false,
 				category: '',
 				categories: [],
 				panel: 1,
@@ -110,7 +132,8 @@
 		},
 		components: {
 			FancyInput,
-			FancyTextarea
+			FancyTextarea,
+			LoadingButton
 		},
 		computed: {},
 		methods: {
@@ -123,6 +146,7 @@
 				this.errors.name = ''
 			},
 			errorCallback (err) {
+				this.loading = false
 				AjaxErrorHandler(this.$store)(err, (error, modalErrors) => {
 					if(this.errors[error.parameter] !== undefined) {
 						this.errors[error.parameter] = error.message
@@ -142,9 +166,11 @@
 					password: this.password,
 					admin: true
 				})
+				this.loading = true
 				req.then(res => {
 					this.$store.commit('setUsername', res.data.username)
 					this.panel = 2
+					this.loading = false
 				}).catch(this.errorCallback)
 			},
 			addSettings () {
@@ -153,11 +179,13 @@
 					this.errors.forumName = 'Forum name can\'t be blank'
 					return
 				}
+				this.loading = true
 				let settingsReq = this.axios.put('/api/v1/settings', {
 					forumName: this.forumName,
 					forumDescription: this.forumDescription
 				})
 				settingsReq.then(res => {
+					this.loading = false
 					this.$store.commit('setForumName', res.data.forumName)
 					this.panel = 3
 				}).catch(this.errorCallback)
@@ -168,10 +196,12 @@
 					this.errors.name = 'Category name can\'t be blank'
 					return
 				}
+				this.loading = true
 				this.axios.post('/api/v1/category', {
 					name: this.category.trim()
 				}).then(res => {
-					this.$store.commit('addCategories', res.data.name)
+					this.loading = false
+					this.$store.commit('addCategories', res.data)
 					this.categories.push(res.data.name)
 				}).catch(this.errorCallback)
 				this.category = ''
@@ -216,9 +246,9 @@
 			margin: 0;
 			margin-right: 0.5rem;
 		}
-		button {
-			height: 1.9rem;
-			padding: 0 0.5rem;
+		div.button {
+			height: 2rem;
+			padding: 0.25rem 0.5rem;
 		}
 	}
 </style>

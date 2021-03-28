@@ -1,9 +1,9 @@
 <template>
 	<div id='app'>
-		<modal-window v-model='showAjaxErrorsModal' style='z-index: 100'>
+		<modal-window v-model='showAjaxErrorsModal' style='z-index: 100' width='25rem'>
 			<div style='padding: 0rem 1rem 1rem 1rem;'>
 				<p v-for='error in this.$store.state.ajaxErrors' :key='error'>{{error}}</p>
-				<button class='button' @click='showAjaxErrorsModal = false'>OK</button>
+				<button class='button button--modal' @click='showAjaxErrorsModal = false'>OK</button>
 			</div>
 		</modal-window>
 		<modal-window v-model='showAccountModal'>
@@ -15,12 +15,14 @@
 					</p>
 					<fancy-input
 						v-model='signup.username'
+						:error='signup.errors.username'
 						placeholder='Username'
 						width='100%'
 					>
 					</fancy-input>
 					<fancy-input
 						v-model='signup.password'
+						:error='signup.errors.password'
 						placeholder='Password'
 						type='password'
 						width='100%'
@@ -28,15 +30,16 @@
 					</fancy-input>
 					<fancy-input
 						v-model='signup.confirmPassword'
+						:error='signup.errors.confirmPassword'
 						placeholder='Confirm password'
 						type='password'
 						width='100%'
 					>
 					</fancy-input>
-					<button class='button button--green' @click='signup'>
+					<loading-button class='button--green' :loading='signup.loading' @click='createAccount'>
 						Sign up
-					</button>
-					<button class='button' @click='cancel'>
+					</loading-button>
+					<button class='button' @click='closeAccountModal'>
 						Cancel
 					</button>
 				</template>
@@ -46,21 +49,23 @@
 					</p>
 					<fancy-input
 						v-model='login.username'
+						:error='login.errors.username'
 						placeholder='Username'
 						width='100%'
 					>
 					</fancy-input>
 					<fancy-input
 						v-model='login.password'
+						:error='login.errors.password'
 						placeholder='Password'
 						type='password'
 						width='100%'
 					>
 					</fancy-input>
-					<button class='button button--green' @click='signup'>
+					<loading-button class='button button--green' :loading='login.loading' @click='doLogin'>
 						Log in
-					</button>
-					<button class='button' @click='cancel'>
+					</loading-button>
+					<button class='button' @click='closeAccountModal'>
 						Cancel
 					</button>
 				</template>
@@ -72,9 +77,9 @@
 			</div>
 			<div class='header__group'>
 				<template v-if='$store.state.username'>
-					<div class='button' @click='logout'>
+					<loading-button @click='logout' :loading='loadingLogout'>
 						Log out
-					</div>
+					</loading-button>
 				</template>
 				<template v-else>
 					<div class='button button--green' @click='showAccountModalTab(0)'>
@@ -98,26 +103,42 @@
 	import ModalWindow from './components/ModalWindow'
 	import TabView from './components/TabView'
 	import FancyInput from './components/FancyInput'
+	import LoadingButton from './components/LoadingButton'
 	// import mapGetters from 'vuex'
 	import AjaxErrorHandler from './assets/js/errorHandler'
+	let { addFlexBoxChildren } = require('./assets/js/flexBoxGridCorrect')
 	export default {
 		name: 'app',
 		components: {
 			ModalWindow,
 			TabView,
-			FancyInput
+			FancyInput,
+			LoadingButton
 		},
 		data () {
 			return {
 				signup: {
 					username: '',
 					password: '',
-					confirmPassword: ''
+					confirmPassword: '',
+					loading: false,
+					errors: {
+						username: '',
+						password: '',
+						confirmPassword: ''
+					}
 				},
 				login: {
 					username: '',
-					password: ''
-				}
+					password: '',
+					loading: false,
+					errors: {
+						username: '',
+						password: ''
+					}
+				},
+				loadingLogout: false,
+				ajaxErrorHandler: AjaxErrorHandler(this.$store)
 			}
 		},
 		computed: {
@@ -137,6 +158,23 @@
 			showAccountTab : {
 				get () { return this.$store.state.accountTabs },
 				set (index) { this.$store.commit('setAccountTabs', index) }
+			},
+			categories() {
+				return this.$store.state.meta.categories
+			}
+		},
+		watch: {
+			$route (to) {
+				if(to.path === '/') {
+					setTimeout(() => {
+						addFlexBoxChildren('.index_categories', 'index_category');
+					}, 50);
+				}
+			},
+			categories () {
+				setTimeout(() => {
+					addFlexBoxChildren('.index_categories', 'index_category');
+				}, 50);
 			}
 		},
 		methods: {
@@ -145,30 +183,113 @@
 				this.showAccountTab = index
 			},
 			logout () {
+				this.loadingLogout = true
 				this.axios.post(
 					'/api/v1/user/' +
 					this.$store.state.username +
 					'/logout'
 				).then(() => {
+					this.loadingLogout = false
 					this.$store.commit('setUsername', '')
 				}).catch(err => {
-					console.log(err)
+					this.loadingLogout = false
+					this.ajaxErrorHandler(err)
 				})
 			},
-			cancel () {
-				this.showAccountModal = false
+			clearSignup () {
+				this.signup.username = ''
+				this.signup.password = ''
+				this.signup.confirmPassword = ''
 			},
+			clearSignupErrors () {
+				this.signup.errors.username = ''
+				this.signup.errors.password = ''
+				this.signup.errors.confirmPassword = ''
+			},
+			clearLogin () {
+				this.login.username = ''
+				this.login.password = ''
+			},
+			clearLoginErrors () {
+				this.login.errors.username = ''
+				this.login.errors.password = ''
+			},
+			closeAccountModal () {
+				this.showAccountModal = false
+				this.clearLogin()
+				this.clearSignup()
+				this.clearLoginErrors()
+				this.clearSignupErrors()
+			},
+			createAccount () {
+				this.clearSignupErrors()
+				if(this.signup.password !== this.signup.confirmPassword) {
+					this.signup.errors.confirmPassword = 'Passwords must match'
+				} else {
+					this.signup.loading = true
+					this.axios.post('/api/v1/user', {
+						username: this.signup.username,
+						password: this.signup.password
+					}).then(res => {
+						this.signup.loading = false
+						this.$store.commit('setUsername', res.data.username)
+						this.closeAccountModal()
+					}).catch(e => {
+						this.signup.loading = false
+						this.ajaxErrorHandler(e, (error) => {
+							let param = error.parameter
+							if(this.signup.errors[param] !== undefined) {
+								this.signup.errors[param] = error.message
+							}
+						})
+					})
+				}
+			},
+			doLogin () {
+				this.clearSignupErrors()
+				if(!this.login.username.trim().length) {
+					this.login.errors.username = 'Username must not be blank'
+					return
+				}
+				this.login.loading = true
+				this.axios.post(`/api/v1/user/${this.login.username}/login`, {
+					password: this.login.password
+				}).then(res => {
+					this.login.loading = false
+					this.$store.commit('setUsername', res.data.username)
+					this.closeAccountModal()
+				}).catch(e => {
+					this.login.loading = false
+					this.ajaxErrorHandler(e, (error) => {
+						let param = error.parameter
+						if(this.login.errors[param] !== undefined) {
+							this.login.errors[param] = error.message
+						}
+					})
+				})
+			}
 		},
 		created () {
-			let ajaxErrorHandler = AjaxErrorHandler(this.$store)
 			this.axios.get('/api/v1/settings')
 				.then(res => {
+					let usernameCookie = document.cookie
+						.split(';')
+						.map(c => c.split('='))
+						.filter(pair => pair[0].trim() === 'username')
+						.map(pair => pair[1])[0]
+					if(usernameCookie) this.$store.commit('setUsername', usernameCookie)
 					this.$store.commit('setForumName', res.data.forumName)
-				}).catch(ajaxErrorHandler)
+				}).catch(err => {
+					if(err.response.data.errors[0].name === 'noSettings') {
+						this.$router.push('/start')
+					} else {
+						this.ajaxErrorHandler(err)
+					}
+				})
 			this.axios.get('/api/v1/category')
 				.then(res => {
 					this.$store.commit('addCategories', res.data)
-				}).catch(ajaxErrorHandler)
+				}).catch(this.ajaxErrorHandler)
 		}
 	}
 </script>
@@ -242,6 +363,15 @@
 		}
 		@at-root #{&}--borderless {
 			border: 0;
+		}
+		@at-root #{&}--modal {
+			padding: 0.25rem 0.5rem;
+			font-size: 0.8rem;
+			float: right;
+			margin-bottom: 1rem;
+			&:last-child {
+				margin-right: 0.5rem;
+			}
 		}
 		@at-root #{&}--orange {
 			border-color: $color__orange--primary;

@@ -3,7 +3,7 @@ module.exports = function(vuex) {
 		let errors = []
 
 		if(res.response === undefined) {
-			errors.push('It looks like you\'re offline')
+			errors.push('An error occured. Try again later')
 		} else {
 			res.response.data.errors.forEach(error => {
 				let param = error.parameter
@@ -16,7 +16,9 @@ module.exports = function(vuex) {
 			})
 		}
 
-		vuex.commit('setAjaxErrors', errors)
-		vuex.commit('setAjaxErrorsModalState', true)
+		if(errors.length) {
+			vuex.commit('setAjaxErrors', errors)
+			vuex.commit('setAjaxErrorsModalState', true)
+		}
 	}
 }

@@ -27,34 +27,39 @@ function addFlexBoxChildren(parentString, childClass) {
 	function addChild() {
 		var div = document.createElement('div');
 		var child = getChildren()[0];
-
+		
 		div.classList.add(childClass);
 		div.style.visibility = 'hidden';
 
 		if(child && child.attributes[0].name.includes('data-v-')) {
 			div.setAttribute(child.attributes[0].name, '');
 		}
-
+	
 
 		container.appendChild(div);
 	}
 
 	//If there are no divs
 	if(!getChildren().length) return;
-	
+
+	//Since there is only one div on the last line therefore
+	//Add another one to allow for the next comparison
 	if(!lastTwoChildrenOnSameLine()) {
 		addChild();
 	}
 
+	//Keep adding invisible div's until the last div and
+	//and the penunltimate div are on different lines
 	while (lastTwoChildrenOnSameLine()) {
 		addChild();
 	}
 
+	//Then remove last (additional) div
 	var children = getChildren();
 	if(children.slice(-1)[0].style.visibility === 'hidden') {
 		container.removeChild(children.slice(-1)[0]);
 	}
-
+	
 }
 
 var onResize = function(parentString, childClass) {
@@ -73,7 +78,7 @@ var onResize = function(parentString, childClass) {
 	});
 }
 
-export {
-	onResize as default,
+module.exports = {
+	onResize,
 	addFlexBoxChildren
-} 
+}

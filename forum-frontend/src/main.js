@@ -18,7 +18,7 @@ import AdminDashboard from './components/routes/AdminDashboard'
 import AdminUsers from './components/routes/AdminUsers'
 import AdminSettings from './components/routes/AdminSettings'
 
-import onResize from './assets/js/flexBoxGridCorrect'
+let { onResize } = require('./assets/js/flexBoxGridCorrect.js')
 
 onResize('.index_categories', 'index_category');
 
@@ -41,7 +41,12 @@ const router = new VueRouter({
 	],
 	mode: 'history'
 })
+
 Vue.filter('formatDate', function (value, format = '', join = ' ') {
+	if(typeof value !== 'object') {
+		value = new Date(value)
+	}
+
 	//Add leading zero if under 10
 	function lz(num) {
 		if(num < 10) {
@@ -67,10 +72,25 @@ Vue.filter('formatDate', function (value, format = '', join = ' ') {
 	return format.split('|').map(formatSegment).join(join);
 });
 
+Vue.filter('stripTags', function (value) {
+	let div = document.createElement('div')
+	div.innerHTML = value
+
+	return div.textContent
+});
+
+Vue.filter('truncate', function (value, length) {
+	if(value <= length) {
+		return value
+	} else {
+		return value.slice(0, length) + '...'
+	}
+});
+
 new Vue({
-	render: h => h(App),
+	el: '#app',
 	template: '<App/>',
 	store,
 	components: { App },
 	router
-}).$mount('#app')
+})
