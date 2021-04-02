@@ -28,19 +28,25 @@
 				<div class='post__meta_data'>
 					<div class='post__avatar'>{{post.User.username[0]}}</div>
 					<div class='post__user'>{{post.User.username}}</div>
-					<span class='fa fa-long-arrow-right fa-fw' v-if='post.ReplyingTo'></span>
-					<div class='post__reply' v-if='post.ReplyingTo'>{{post.ReplyingTo.User.username}}</div>
+					<span class='fa fa-long-arrow-right fa-fw' v-if='post.replyingToUsername'></span>
+					<div class='post__reply' v-if='post.replyingToUsername'>{{post.replyingToUsername}}</div>
 					<div class='post__date'>{{post.createdAt | formatDate('time|date', ', ')}}</div>
 				</div>
 				<div class='post__content' v-html='post.content'></div>
-				<div class='post__actions'>
-					<div class='post__action post__share'>Share</div>
-					<div
-						class='post__action post__reply'
-						v-if='$store.state.username'
-						@click='replyUser(post.id, post.User.username)'
-					>
-						Reply
+				<div class='post__footer'>
+					<div class='post__footer_group'>
+						Replies:
+						<post-reply v-for='reply in post.Replies' :key='reply' :post='reply'></post-reply>
+					</div>
+					<div class='post__footer_group'>
+						<div class='post__action post__share'>Share</div>
+						<div
+							class='post__action post__reply'
+							v-if='$store.state.username'
+							@click='replyUser(post.id, post.User.username)'
+						>
+							Reply
+						</div>
 					</div>
 				</div>
 			</div>
@@ -50,12 +56,14 @@
 
 <script>
 	import InputEditor from '../InputEditor'
+	import PostReply from '../PostReply'
 	import throttle from 'lodash.throttle'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'Thread',
 		components: {
-			InputEditor
+			InputEditor,
+			PostReply
 		},
 		data () {
 			return { headerTitle: false }
@@ -65,7 +73,7 @@
 				return this.$store.state.thread.thread;
 			},
 			posts () {
-				return this.$store.state.thread.posts;
+				return this.$store.getters.sortedPosts;
 			},
 			replyUsername () {
 				return this.$store.state.thread.reply.username
@@ -106,7 +114,7 @@
 				this.showEditor();
 			},
 			addPost () {
-				this.$store.dispatch('addPostAsync');
+				this.$store.dispatch('addPostAsync', this);
 			}
 		},
 		created () {
@@ -183,7 +191,7 @@
 			height: 3rem;
 			width: 3rem;
 			line-height: 3rem;
-			@include text($font--role-emphasis, 2rem)
+			@include text($font--role-emphasis, 2rem);
 			text-align: center;
 			border-radius: 100%;
 			background-color: $color__gray--darkest;
@@ -204,10 +212,14 @@
 		@at-root #{&}__content {
 			padding: 0.5rem 0 0.5rem 4rem;
 		}
-		@at-root #{&}__actions {
+		@at-root #{&}__footer {
 			padding: 0.5rem 0 0.75rem 4rem;
 			display: flex;
-			justify-content: flex-end;
+			justify-content: space-between;
+			@at-root #{&}_group {
+				align-items: baseline;
+				display: inline-flex;
+			}
 		}
 		@at-root #{&}__action {
 			color: $color__gray--darkest;
@@ -221,5 +233,5 @@
 				color: $color__darkgray--darkest;
 			}
 		}
-	}
+	}	
 </style>

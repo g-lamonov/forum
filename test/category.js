@@ -1,7 +1,7 @@
 process.env.NODE_ENV = 'test'
 
 let chai = require('chai')
-let server = require('../server')
+let server = require('../index')
 let should = chai.should()
 
 let { sequelize } = require('../models')

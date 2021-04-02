@@ -1,7 +1,7 @@
 process.env.NODE_ENV = 'test'
 
 let chai = require('chai')
-let server = require('../server')
+let server = require('../index')
 let should = chai.should()
 
 let { sequelize } = require('../models')
@@ -278,7 +278,16 @@ describe('Thread and post', () => {
 			res.body.should.have.property('content', '<p>another post</p>\n')
 			res.body.should.have.deep.property('User.username', 'username1')
 			res.body.should.have.deep.property('Thread.name', 'thread')
-			res.body.should.have.deep.property('ReplyingTo.User.username', 'username')
+			res.body.should.have.property('replyingToUsername', 'username')
+			res.body.should.have.property('Replies').that.deep.equals([])
+		})
+		it('should return any replies to a post', async () => {
+			let res = await replyAgent.get('/api/v1/post/1')
+
+			res.should.be.json
+			res.should.have.status(200)
+			res.body.should.have.deep.property('replyingToUsername', null)
+			res.body.should.have.deep.property('Replies.0.content', '<p>another post</p>\n')
 		})
 		it('should return an error if reply id does not exist', async () => {
 			try {
