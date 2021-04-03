@@ -24,21 +24,44 @@
 		>
 		</input-editor>
 		<div class='posts'>
-			<div class='post' v-for='post in posts' :key='post'>
+			<div
+				v-for='(post, index) in posts'
+				:key='post'
+				class='post'
+				:class='{"post--highlighted": highlightedPostIndex == index}'
+				ref='posts'
+				@mouseenter='setPostFooterState(index, true)'
+				@mouseleave='setPostFooterState(index, false)'
+			>
 				<div class='post__meta_data'>
-					<div class='post__avatar'>{{post.User.username[0]}}</div>
+					<div class='post__avatar' :style='{"background-color": post.User.color}'>{{post.User.username[0]}}</div>
 					<div class='post__user'>{{post.User.username}}</div>
-					<span class='fa fa-long-arrow-right fa-fw' v-if='post.replyingToUsername'></span>
-					<div class='post__reply' v-if='post.replyingToUsername'>{{post.replyingToUsername}}</div>
+					<span class='fa fa-reply post__reply_icon' v-if='post.replyingToUsername'></span>
+
+					<replying-to
+						v-if='post.replyingToUsername'
+						:replyId='post.replyId'
+						:username='post.replyingToUsername'
+						@click='goToPost(post.replyId)'
+					></replying-to>
 					<div class='post__date'>{{post.createdAt | formatDate('time|date', ', ')}}</div>
 				</div>
 				<div class='post__content' v-html='post.content'></div>
-				<div class='post__footer'>
-					<div class='post__footer_group'>
-						Replies:
-						<post-reply v-for='reply in post.Replies' :key='reply' :post='reply'></post-reply>
+				<div class='post__footer' :class='{ "post__footer--show": postIndexHover === index }'>
+					<div
+						class='post__footer_group'
+						:class='{ "post__footer_group--replies": post.Replies.length }'
+					>
+						<post-reply
+							v-for='reply in post.Replies'
+							:key='reply'
+							:post='reply'
+							:hover='postIndexHover === index'
+							@click='goToPost(reply.id)'
+						></post-reply>
 					</div>
-					<div class='post__footer_group'>
+					<div
+						class='post__footer_group'>
 						<div class='post__action post__share'>Share</div>
 						<div
 							class='post__action post__reply'
@@ -57,16 +80,23 @@
 <script>
 	import InputEditor from '../InputEditor'
 	import PostReply from '../PostReply'
+	import ReplyingTo from '../ReplyingTo'
+
 	import throttle from 'lodash.throttle'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'Thread',
 		components: {
 			InputEditor,
-			PostReply
+			PostReply,
+			ReplyingTo
 		},
 		data () {
-			return { headerTitle: false }
+			return {
+				headerTitle: false,
+				postIndexHover: null,
+				highlightedPostIndex: null
+			}
 		},
 		computed: {
 			thread () {
@@ -115,6 +145,30 @@
 			},
 			addPost () {
 				this.$store.dispatch('addPostAsync', this);
+			},
+			setPostFooterState (index, state) {
+				if(state) {
+					this.postIndexHover = index
+				} else {
+					this.postIndexHover = null
+				}
+			},
+			goToPost (postId) {
+				for(var i = 0; i < this.posts.length; i++) {
+					let post = this.posts[i]
+					if(post.id === postId) {				
+						let postTop = this.$refs.posts[i].getBoundingClientRect().top
+						let header = this.$refs.title.getBoundingClientRect().height
+						window.scrollTo(0, postTop - header - 32)
+						this.highlightedPostIndex = i
+						setTimeout(() => {
+							if(this.highlightedPostIndex === i) {
+								this.highlightedPostIndex = null
+							}
+						}, 3000)
+						break;
+					}
+				}
 			}
 		},
 		created () {
@@ -179,7 +233,11 @@
 	}
 	.post {
 		border-top: thin solid $color__gray--primary;
+		transition: background-color 0.5s;
 		margin: 0.5rem 0;
+		@at-root #{&}--highlighted {
+			background-color: $color__lightgray--darkest;
+		}
 		@at-root #{&}__meta_data {
 			display: flex;
 			padding-top: 0.75rem;
@@ -204,6 +262,13 @@
 		}
 		@at-root #{&}__reply {
 			margin: 0 0.5rem;
+			cursor: pointer;
+		}
+		@at-root #{&}__reply_icon {
+			font-size: 0.75rem;
+			line-height: 1.5rem;
+			margin-right: -0.25rem;
+			color: rgba(0, 0, 0, 0.87);
 		}
 		@at-root #{&}__date {
 			color: $color__gray--darkest;
@@ -215,23 +280,39 @@
 		@at-root #{&}__footer {
 			padding: 0.5rem 0 0.75rem 4rem;
 			display: flex;
+			align-items: baseline;
 			justify-content: space-between;
+			opacity: 0.75;
+			transition: opacity 0.2s;
+			@at-root #{&}--show {
+				opacity: 1;
+				transition: opacity 0.2s;
+			}
 			@at-root #{&}_group {
 				align-items: baseline;
 				display: inline-flex;
+				position: relative;
+				@at-root #{&}--replies {
+					&::before {
+						content: 'Replies:';
+						bottom: 0.25rem;
+						left: -3.75rem;
+						font-size: 0.9rem;
+						position: absolute;	
+						color: $color__darkgray--primary;
+						transition: opacity 0.2s, bottom 0.2s;
+					}
+				}
 			}
 		}
 		@at-root #{&}__action {
-			color: $color__gray--darkest;
+			color: $color__darkgray--primary;
 			cursor: pointer;
 			margin-right: 0.75rem;
 			transition: all 0.2s;
 			&:hover {
-				color: $color__darkgray--primary;
-			}
-			&:active {
 				color: $color__darkgray--darkest;
 			}
 		}
-	}	
+	}
 </style>
