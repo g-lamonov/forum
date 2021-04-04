@@ -34,11 +34,11 @@
 				@mouseleave='setPostFooterState(index, false)'
 			>
 				<div class='post__meta_data'>
-					<div class='post__avatar' :style='{"background-color": post.User.color}'>{{post.User.username[0]}}</div>
+					<avatar-icon :user='post.User' class='post__avatar'></avatar-icon>
 					<div class='post__user'>{{post.User.username}}</div>
-					<span class='fa fa-reply post__reply_icon' v-if='post.replyingToUsername'></span>
-
+					
 					<replying-to
+						style='margin-right: 0.5rem;'
 						v-if='post.replyingToUsername'
 						:replyId='post.replyId'
 						:username='post.replyingToUsername'
@@ -81,6 +81,7 @@
 	import InputEditor from '../InputEditor'
 	import PostReply from '../PostReply'
 	import ReplyingTo from '../ReplyingTo'
+	import AvatarIcon from '../AvatarIcon'
 
 	import throttle from 'lodash.throttle'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
@@ -89,7 +90,8 @@
 		components: {
 			InputEditor,
 			PostReply,
-			ReplyingTo
+			ReplyingTo,
+			AvatarIcon
 		},
 		data () {
 			return {
@@ -246,29 +248,11 @@
 		}
 		@at-root #{&}__avatar {
 			position: absolute;
-			height: 3rem;
-			width: 3rem;
-			line-height: 3rem;
-			@include text($font--role-emphasis, 2rem);
-			text-align: center;
-			border-radius: 100%;
-			background-color: $color__gray--darkest;
-			color: #fff;
 			left: -4rem;
 		}
 		@at-root #{&}__user {
 			@include text($font--role-default, 1rem, 600);
 			margin-right: 0.5rem;
-		}
-		@at-root #{&}__reply {
-			margin: 0 0.5rem;
-			cursor: pointer;
-		}
-		@at-root #{&}__reply_icon {
-			font-size: 0.75rem;
-			line-height: 1.5rem;
-			margin-right: -0.25rem;
-			color: rgba(0, 0, 0, 0.87);
 		}
 		@at-root #{&}__date {
 			color: $color__gray--darkest;

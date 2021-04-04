@@ -106,6 +106,7 @@
 	import LoadingButton from './components/LoadingButton'
 	// import mapGetters from 'vuex'
 	import AjaxErrorHandler from './assets/js/errorHandler'
+	import baseURL from './utils/helpers'
 	let { addFlexBoxChildren } = require('./assets/js/flexBoxGridCorrect')
 	export default {
 		name: 'app',
@@ -185,6 +186,7 @@
 			logout () {
 				this.loadingLogout = true
 				this.axios.post(
+					baseURL +
 					'/api/v1/user/' +
 					this.$store.state.username +
 					'/logout'
@@ -227,7 +229,7 @@
 					this.signup.errors.confirmPassword = 'Passwords must match'
 				} else {
 					this.signup.loading = true
-					this.axios.post('/api/v1/user', {
+					this.axios.post(baseURL + '/api/v1/user', {
 						username: this.signup.username,
 						password: this.signup.password
 					}).then(res => {
@@ -252,7 +254,7 @@
 					return
 				}
 				this.login.loading = true
-				this.axios.post(`/api/v1/user/${this.login.username}/login`, {
+				this.axios.post(baseURL + `/api/v1/user/${this.login.username}/login`, {
 					password: this.login.password
 				}).then(res => {
 					this.login.loading = false
@@ -270,7 +272,7 @@
 			}
 		},
 		created () {
-			this.axios.get('/api/v1/settings')
+			this.axios.get(baseURL + '/api/v1/settings')
 				.then(res => {
 					let usernameCookie = document.cookie
 						.split(';')
@@ -286,8 +288,9 @@
 						this.ajaxErrorHandler(err)
 					}
 				})
-			this.axios.get('/api/v1/category')
+			this.axios.get(baseURL + '/api/v1/category')
 				.then(res => {
+					res.data.push({ name: 'All', value: 'ALL' })
 					this.$store.commit('addCategories', res.data)
 				}).catch(this.ajaxErrorHandler)
 		}

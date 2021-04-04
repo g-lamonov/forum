@@ -23,7 +23,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr class='thread' v-for='thread in filteredThreads' :key='thread' @click='navigateToThread(thread.slug, thread.id)'>
+				<tr class='thread' v-for='thread in filteredThreads' :key='thread'  @click='navigateToThread(thread.slug, thread.id)' >
 					<td>{{thread.name}}</td>
 					<td>
 						<div>{{thread.Posts[0].content | stripTags | truncate(100)}}</div>
@@ -45,6 +45,7 @@
 	// import TabView from '../TabView'
 	import SelectOptions from '../SelectOptions'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
+	import baseURL from '../../utils/helpers'
 	export default {
 		name: 'index',
 		components: {
@@ -107,6 +108,14 @@
 		methods: {
 			navigateToThread (slug, id) {
 				this.$router.push('/thread/' + slug + '/' + id);
+			},
+			getThreads () {
+				this.axios
+					.get(baseURL + '/api/v1/category/' + this.selectedCategory)
+					.then(res => {
+						this.threads = res.data.Threads
+					})
+					.catch(AjaxErrorHandler(this.$store))
 			}
 		},
 		watch: {
@@ -115,16 +124,12 @@
 			},
 			$route () {
 				this.selectedCategory = this.$route.path.split('/')[2].toUpperCase()
+				this.getThreads()
 			}
 		},
 		created () {
 			this.selectedCategory = this.$route.path.split('/')[2].toUpperCase()
-			this.axios
-				.get('/api/v1/category/' + this.selectedCategory)
-				.then(res => {
-					this.threads = res.data.Threads
-				})
-				.catch(AjaxErrorHandler(this.$store))
+			this.getThreads()
 		}
 	}
 </script>

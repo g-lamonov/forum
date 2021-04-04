@@ -119,28 +119,19 @@ router.post('/', async (req, res) => {
 
 router.get('/:username', async (req, res) => {
 	try {
-		if(
-			!req.session.loggedIn ||
-			req.session.username !== req.params.username
-		) {
-			throw Errors.requestNotAuthorized
-		}
-
 		let user = await User.findOne({
 			attributes: { exclude: ['hash', 'id'] },
 			where: { username: req.params.username }
 		})
 
+		if(!user) throw Errors.accountDoesNotExist
+
 		res.json(user.toJSON())
 	} catch (err) {
-		if(err === Errors.requestNotAuthorized) {
-			res.status(403)
-			res.json({
-				errors: [Errors.requestNotAuthorized]
-			})
+		if(err === Errors.accountDoesNotExist) {
+			res.status(400)
+			res.json({ errors: [err] })
 		} else {
-			console.log(err)
-
 			res.status(500)
 			res.json({
 				errors: [Errors.unknown]

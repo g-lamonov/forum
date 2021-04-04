@@ -15,7 +15,7 @@ describe('User', () => {
 	//Wait for app to start before commencing
 	before((done) => {
 		if(server.locals.appStarted) done()
-
+			
 		server.on('appStarted', () => {
 			done()
 		})
@@ -175,29 +175,6 @@ describe('User', () => {
 			}
 		})
 
-		it('should log in the user after creating an account', (done) => {
-			let agent = chai.request.agent(server)
-
-			agent
-				.post('/api/v1/user')
-				.set('content-type', 'application/x-www-form-urlencoded')
-				.send({
-					username: 'username1',
-					password: 'password'
-				})
-				.end((err, res) => {
-					
-					agent
-						.get('/api/v1/user/username1')
-						.then((res) => {
-							res.should.have.status(200)
-
-							done()
-						})
-						.catch(done)
-				})
-		})
-
 		it('should throw an error if account already created', (done) => {
 			chai.request(server)
 				.post('/api/v1/user')
@@ -290,6 +267,33 @@ describe('User', () => {
 
 	})
 
+	describe('/:username GET user', () => {
+		it('should return the user', async () => {
+			let res = await chai.request(server)
+				.get('/api/v1/user/username')
+
+			res.should.have.status(200)
+			res.should.be.json
+			res.body.should.have.property('username', 'username')
+			res.body.should.have.property('color')
+			res.body.should.not.have.property('hash')
+		})
+
+		it('should return an error if username invalid', async () => {
+			try {
+				let res = await chai.request(server)
+					.get('/api/v1/user/not_a_user')
+
+				res.should.have.status(400)
+				res.body.errors.should.contain.something.that.deep.equals(Errors.accountDoesNotExist)
+			} catch(res) {
+				let body = JSON.parse(res.response.text)
+				res.should.have.status(400)
+				body.errors.should.contain.something.that.deep.equals(Errors.accountDoesNotExist)
+			}
+		})
+	})
+
 	describe('/:username/login POST user', () => {
 		let agent = chai.request.agent(server)
 
@@ -320,6 +324,7 @@ describe('User', () => {
 					res.should.have.status(401)
 					res.body.should.have.property('errors')
 					res.body.errors.should.contain.something.that.deep.equals(Errors.invalidLoginCredentials)
+					res.should.not.have.cookie('username')
 
 					done()
 				})
@@ -335,16 +340,13 @@ describe('User', () => {
 				.end((err, res) => {
 					res.should.have.status(200)
 					res.should.be.json
-					res.should.have.cookie('connect.sid')
+					res.should.have.cookie('username', 'username')
 
-					agent
-						.get('/api/v1/user/username')
-						.then((res) => {
-							res.should.have.status(200)
-
-							done()
-						})
-						.catch(done)
+					if(err) {
+						done(err)
+					} else {
+						done()
+					}
 				})
 		})
 	})
@@ -366,24 +368,13 @@ describe('User', () => {
 						.post('/api/v1/user/username/logout')
 						.end((err, res) => {
 							res.should.have.status(200)
+							res.should.not.have.cookie('username')
 
-							agent
-								.get('/api/v1/user/username')
-								.then((res) => {
-									res.should.have.status(403)
-									res.body.errors.should.contain.something.that.deep.equals(Errors.requestNotAuthorized)
-
-									done()
-								})
-								.catch((res) => {
-									res.should.have.status(403)
-									JSON
-										.parse(res.response.text)
-										.errors.should.contain.something
-										.that.deep.equals(Errors.requestNotAuthorized)
-
-									done()
-								})
+							if(err) {
+								done(err)
+							} else {
+								done()
+							}
 						})
 				})
 		})
