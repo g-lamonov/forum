@@ -1,5 +1,6 @@
 let express = require('express')
 let app = express()
+let cors = require('cors');
 
 let sequelize = require('./models').sequelize
 
@@ -10,6 +11,7 @@ let bodyParser = require('body-parser')
 let morgan = require('morgan')
 let session = require('express-session')
 
+app.use(cors({origin: 'http://localhost:8080'}));
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(session({

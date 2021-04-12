@@ -2,37 +2,37 @@ let express = require('express')
 let router = express.Router()
 
 const Errors = require('../lib/errors.js')
-let { User, Thread, Category } = require('../models')
+let { User, Thread, Category, Post } = require('../models')
 
 router.get('/:thread_id', async (req, res) => {
 	try {
-		let limit = +req.query.limit || 10
-		let whereObj = { id: req.params.thread_id }
+		let lastId = 0
+		let limit = 10
 
-		if(req.query.start) {
-			whereObj.createdAt = { $lt: req.query.start }
-		}
+		if(+req.query.lastId > 0) lastId = +req.query.lastId
+		if(+req.query.limit > 0) limit = +req.query.limit
 
-		let thread = await Thread.findAll({
-			where: whereObj,
-			limit: limit,
-			order: [['createdAt', 'DESC']],
-			include: Thread.includeOptions()
+		let thread = await Thread.findById(req.params.thread_id, {
+			include: Thread.includeOptions(lastId, limit)
 		})
 
 		if(!thread) throw Errors.invalidParameter('id', 'thread does not exist')
 
-		let meta = { limit: limit, next: null }
+		let maxId = await Post.max('id', { where: { threadId: +req.params.thread_id } })
 
-		if(thread.Posts.length) {
-			let lastPost = thread.Posts.slice(-1)[0]
-			meta.next = lastPost.createdAt
+		let resThread = thread.toJSON()
+		let lastPost = thread.Posts.slice(-1)[0]
+		resThread.meta = {}
+
+		if(!lastPost || maxId === lastPost.id) {
+			resThread.meta.nextURL = null
+		} else {
+			resThread.meta.nextURL =
+				`/api/v1/thread/${thread.id}?limit=${limit}&lastId=${lastPost.id}`
 		}
 
-		res.json({
-			meta: meta,
-			thread: thread.toJSON()
-		})
+		res.json(resThread)
+		
 	} catch (e) {
 		if(e.name === 'invalidParameter') {
 			res.status(400)

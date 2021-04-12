@@ -26,7 +26,7 @@
 			>
 				<post-reply
 					v-for='reply in post.Replies'
-                    :key='reply'
+					:key='reply'
 					:post='reply'
 					:hover='hover'
 					@click='$emit("goToPost", reply.id)'
@@ -51,7 +51,7 @@
 	import PostReply from './PostReply'
 	import ReplyingTo from './ReplyingTo'
 	import AvatarIcon from './AvatarIcon'
-	import AjaxErrorHandler from '../assets/js/errorHandler'
+	// import AjaxErrorHandler from '../assets/js/errorHandler'
 	export default {
 		name: 'Post',
 		props: ['post', 'highlight', 'showReply', 'showThread'],
@@ -84,6 +84,10 @@
 		margin: 0.5rem 0;
 		@at-root #{&}--highlighted {
 			background-color: $color__lightgray--darkest;
+		}
+		@at-root #{&}--last {
+			padding-bottom: 0.5rem;
+			border-bottom: thin solid $color__gray--primary;
 		}
 		@at-root #{&}__meta_data {
 			display: flex;
