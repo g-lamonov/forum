@@ -21,10 +21,11 @@ module.exports = (sequelize, DataTypes) => {
 		classMethods: {
 			associate (models) {
 				User.hasMany(models.Post)
+				User.hasMany(models.Thread)
 			},
 			includeOptions (lastId, limit) {
 				let models = sequelize.models
-				let options = models.Post.includeOptions()[0]
+				let options = models.Post.includeOptions()
 
 				return [{
 					model: models.Post,

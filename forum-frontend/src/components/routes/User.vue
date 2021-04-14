@@ -9,42 +9,66 @@
 			</div>
 			<div class='user_header__info'>
 				<span class='user_header__username'>{{username}}</span>
-				<span class='user_header__date' v-if='user'>Created: {{user.createdAt | formatDate('date') }}</span>
+				<span class='user_header__date' v-if='user'>Account created {{user.createdAt | formatDate('date') }}</span>
 			</div>
 			<div></div>
 		</div>
 		<div class='user_description' v-if='user' v-html='user.description'>
 		</div>
-		<div class='user_posts' :class='{ "user_posts--no_border_bottom": !posts.length }'>
-			<div class='user_posts__title'>Posts by username</div>
-			<thread-post v-for='post in posts' :key='post' :post='post' :show-thread='true'></thread-post>
-			<template v-if='!posts.length'>This user hasn't posted anything yet</template>
+		<div class='user__view_holder'>
+			<div class='user__links'>
+				<div
+					class='user__links__menu_item'
+					v-for='(item, index) in menuItems'
+					:key='item'
+					:class="{'user__links__menu_item--selected': index === selected}"
+					@click='$router.push(`/user/${username}/${item.route}`)'
+				>
+					{{item.name}}
+				</div>
+			</div>
+			<router-view class='user__view'></router-view>
 		</div>
 	</div>
 </template>
 
 <script>
-	import ThreadPost from '../ThreadPost'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'user',
-		components: {
-			ThreadPost
-		},
 		data () {
 			return {
+				menuItems: [
+					{ name: 'Posts', route: 'posts' }, 
+					{ name: 'Threads started', route: 'threads' }
+				],
+				selected: 0,
 				username: this.$route.params.username,
-				user: null,
-				posts: []
+				user: null
+			}
+		},
+		watch: {
+			$route (to) {
+				this.selected = this.getIndexFromRoute(to.path)
+			}
+		},
+		methods: {
+			getIndexFromRoute (path) {
+				let selectedIndex
+				let route = path.split('/')[3]
+				this.menuItems.forEach((item, index) => {
+					if(item.route === route) {
+						selectedIndex = index
+					}
+				})
+				return selectedIndex
 			}
 		},
 		created () {
+			this.selected = this.getIndexFromRoute(this.$route.path)
 			this.axios
-				.get(`/api/v1/user/${this.$route.params.username}?posts=true`)
-				.then(res => {
-					this.user = res.data
-					this.posts = res.data.Posts
-				})
+				.get(`/api/v1/user/${this.$route.params.username}`)
+				.then(res => this.user = res.data)
 				.catch(AjaxErrorHandler(this.$store))
 		}
 	}
@@ -86,19 +110,34 @@
 		margin-left: 5rem;
 		width: 75%;
 	}
-	.user_posts {
+	.user__view_holder {
+		display: flex;
 		width: calc(75% + 5rem);
-		&:last-child {
-			border-bottom: thin solid $color__gray--primary;
-		}
-		@at-root #{&}--no_border_bottom {
-			&:last-child {
-				border-bottom: none;
+	}
+	.user__links {
+		width: 10rem;
+		@at-root #{&}__menu_item {
+			cursor: pointer;
+			margin-bottom: 0.5rem;
+			position: relative;
+			&:hover { color: $color__darkgray--primary; }
+			@at-root #{&}--selected {
+				font-weight: 500;
+				&::before {
+					content: '';
+					display: inline-block;
+					width: 0.2rem;
+					z-index: 1;
+					height: 100%;
+					position: absolute;
+					left: -0.5rem;
+					top: 0.0625rem;
+					background-color: $color__gray--darkest;
+				}
 			}
 		}
-		@at-root #{&}__title {
-			font-size: 1.5rem;
-			margin-bottom: 1rem;
-		}
+	}
+	.user__view {
+		flex-grow: 1;
 	}
 </style>
