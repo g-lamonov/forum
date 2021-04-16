@@ -8,6 +8,8 @@ let expect = chai.expect
 let { sequelize } = require('../models')
 
 const Errors = require('../lib/errors.js')
+let PAGINATION_THREAD_ID
+let MID_PAGINATION_POST_ID
 
 chai.use(require('chai-http'))
 chai.use(require('chai-things'))
@@ -49,7 +51,7 @@ describe('Thread and post', () => {
 	})
 
 	//Delete all rows in table after
-	//tests completed
+	//tess completed
 	after(() => {
 		sequelize.sync({ force: true })
 	})
@@ -365,11 +367,27 @@ describe('Thread and post', () => {
 				.set('content-type', 'application/json')
 				.send({ category: 'category_name', name: 'pagination' })
 
+			let threadOther = await userAgent
+				.post('/api/v1/thread')
+				.set('content-type', 'application/json')
+				.send({ category: 'category_name', name: 'pagination_other' })
+
+			PAGINATION_THREAD_ID = thread.body.id
+
 			for(var i = 0; i < 30; i++) {
-				await userAgent
+				let post = await userAgent
 					.post('/api/v1/post')
 					.set('content-type', 'application/json')
 					.send({ threadId: thread.body.id, content: `POST ${i}` })
+
+				if(i === 3) {
+					await userAgent
+						.post('/api/v1/post')
+						.set('content-type', 'application/json')
+						.send({ threadId: threadOther.body.id, content: `POST OTHER ${i}` })
+				}
+
+				if(i === 15) MID_PAGINATION_POST_ID = post.body.id
 			}
 
 			let pageOne = await userAgent.get('/api/v1/thread/' + thread.body.id)
@@ -378,10 +396,12 @@ describe('Thread and post', () => {
 			let pageInvalid = await userAgent.get('/api/v1/thread/' + thread.body.id + '?lastId=' + 100)
 
 			pageOne.body.Posts.should.have.length(10)
+			pageOne.body.meta.should.have.property('previousURL', null)
 			pageOne.body.Posts[0].should.have.property('content', '<p>POST 0</p>\n')
 
 			pageTwo.body.Posts.should.have.length(10)
 			pageTwo.body.Posts[0].should.have.property('content', '<p>POST 10</p>\n')
+			pageTwo.body.meta.should.have.property('previousURL')
 
 			pageThree.body.Posts.should.have.length(10)
 			pageThree.body.Posts[0].should.have.property('content', '<p>POST 20</p>\n')
@@ -389,6 +409,31 @@ describe('Thread and post', () => {
 			expect(pageThree.body.meta.nextURL).to.be.null
 
 			pageInvalid.body.Posts.should.have.length(0)
+		})
+		it('should allow you to get an individual and surrounding posts', async () => {
+			let http = chai.request(server)
+			
+			let pageOne = await http.get(`/api/v1/thread/${PAGINATION_THREAD_ID}?postId=${MID_PAGINATION_POST_ID}`)
+			let pageZero = await http.get(pageOne.body.meta.previousURL)
+			let pageTwo = await http.get(pageOne.body.meta.nextURL)
+
+			pageOne.body.Posts.should.have.length(10)
+			pageOne.body.Posts[0].should.have.property('content', '<p>POST 11</p>\n')
+			pageOne.body.Posts[4].should.have.property('content', '<p>POST 15</p>\n')
+			pageOne.body.Posts[9].should.have.property('content', '<p>POST 20</p>\n')
+
+			pageTwo.body.Posts.should.have.length(9)
+			pageTwo.body.Posts[0].should.have.property('content', '<p>POST 21</p>\n')
+			pageTwo.body.Posts[8].should.have.property('content', '<p>POST 29</p>\n')
+			pageTwo.body.meta.should.have.property('nextURL', null)
+			
+			pageZero.body.Posts.should.have.length(10)
+			pageZero.body.Posts[0].should.have.property('content', '<p>POST 1</p>\n')
+			pageZero.body.Posts[9].should.have.property('content', '<p>POST 10</p>\n')
+
+			let pageFirst = await http.get(pageZero.body.meta.previousURL)
+			pageFirst.body.Posts[0].should.have.property('content', '<p>POST 0</p>\n')
+			pageFirst.body.meta.should.have.property('previousURL', null)
 
 		})
 		it('should return an error if :id is invalid', async () => {
