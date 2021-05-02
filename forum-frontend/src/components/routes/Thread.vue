@@ -26,14 +26,16 @@
 		<div class='posts'>
 			<scroll-load
 				:loading='loadingPosts'
-				:show='$store.state.thread.nextURL !== null'
-				@load='loadNewPosts'
+				:showNext='$store.state.thread.nextURL !== null'
+				:showPrevious='$store.state.thread.previousURL !== null'
+				@loadNext='loadNextPosts'
+				@loadPrevious='loadPreviousPosts'
 			>
 				<thread-post
 					v-for='(post, index) in posts'
 					:key='post'
 					@reply='replyUser'
-					@goToPost='goToPost'
+					@goToPost='$router.push({ params: { post_id: post.id } })'
 					:post='post'
 					:show-reply='true'
 					:highlight='highlightedPostIndex === index'
@@ -113,30 +115,45 @@
 			addPost () {
 				this.$store.dispatch('addPostAsync', this);
 			},
-			loadNewPosts () {
-				this.$store.dispatch('loadNewPostsAsync', this);
+			loadNextPosts () {
+				let vue = this
+				this.$store.dispatch('loadPostsAsync', { vue, previous: false });
 			},
-			goToPost (postId) {
+			loadPreviousPosts () {
+				let vue = this
+				this.$store.dispatch('loadPostsAsync', { vue, previous: true });
+			},
+			loadInitialPosts () {
+				this.$store.dispatch('loadInitialPostsAsync', this)
+			},	
+			goToPost (id) {
+				this.$router.push({ params: { post_id: id } })
+				this.loadInitialPosts()
+			},
+			highlightPost (postId) {
 				for(var i = 0; i < this.posts.length; i++) {
 					let post = this.posts[i]
 					if(post.id === postId) {
-						let postTop = this.$refs.posts[i].$el.getBoundingClientRect().top
-						let header = this.$refs.title.getBoundingClientRect().height
-						window.scrollTo(0, postTop - header - 32)
-						this.highlightedPostIndex = i
-						setTimeout(() => {
+						this.$nextTick(() => {
+							let postTop = this.$refs.posts[i].$el.getBoundingClientRect().top
+							let header = this.$refs.title.getBoundingClientRect().height
+							window.scrollTo(0, postTop - header - 32)
+							this.highlightedPostIndex = i
 							if(this.highlightedPostIndex === i) {
-								this.highlightedPostIndex = null
+								setTimeout(() => this.highlightedPostIndex = null, 3000)
 							}
-						}, 3000)
+						})
 						break;
 					}
 				}
 			}
 		},
+		watch: {
+			'$route': 'loadInitialPosts'
+		},
 		created () {
-			var self = this;
-			var setHeader = function() {
+			let self = this;
+			let setHeader = function() {
 				if(!self.$refs.title) return;
 				if(self.$refs.title.getBoundingClientRect().top <= 32) {
 					self.headerTitle = true;
@@ -146,13 +163,7 @@
 			};
 			setHeader();
 			document.addEventListener('scroll', throttle(setHeader, 200));
-			this.axios
-				.get('/api/v1/thread/' + this.$route.params.id)
-				.then(res => {
-					this.$store.commit('setThread', res.data)
-					this.$store.commit('setNextURL', res.data.meta.nextURL)
-					this.$store.commit('setPosts', res.data.Posts)
-				}).catch(AjaxErrorHandler(this.$store))
+			this.loadInitialPosts()
 		}
 	}
 </script>

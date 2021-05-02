@@ -1,12 +1,22 @@
 <template>
 	<div class='scroll_load'>
-		<slot></slot>
-		<div class='scroll_load__button' :class='{"scroll_load__button--hidden": !show}'>
+		<div class='scroll_load__button' :class='{"scroll_load__button--hidden": !showPrevious}'>
 			<loading-button
 				class='button'
 				:loading='loading'
 				:dark='true'
-				@click='$emit("load")'
+				@click='$emit("loadPrevious")'
+			>
+				Load previous posts...
+			</loading-button>
+		</div>
+		<slot></slot>
+		<div class='scroll_load__button' :class='{"scroll_load__button--hidden": !showNext}'>
+			<loading-button
+				class='button'
+				:loading='loading'
+				:dark='true'
+				@click='$emit("loadNext")'
 			>
 				Load more posts...
 			</loading-button>
@@ -19,15 +29,19 @@
 	import throttle from 'lodash.throttle'
 	export default {
 		name: 'ScrollLoad',
-		props: ['loading', 'show'],
+		props: ['loading', 'showNext', 'showPrevious'],
 		components: {
 			LoadingButton
 		},
 		methods: {
-			onScroll () {
+			onScroll (e) {
 				if(document.body.scrollHeight - document.body.scrollTop - 150 <= document.body.clientHeight) {
 					if(!this.loading) {
-						this.$emit('load')
+						this.$emit('loadNext')
+					}
+				} else if(document.body.scrollTop <= 200) {
+					if(!this.loading) {
+						this.$emit('loadPrevious')
 					}
 				}
 			}

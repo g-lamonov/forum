@@ -29,6 +29,13 @@ module.exports = (sequelize, DataTypes) => {
 			includeOptions () {
 				let models = sequelize.models
 
+				marked.setOptions({
+					highlight: function (code) {
+						return require('highlight.js').highlightAuto(code).value;
+					},
+					sanitize: true
+				});
+
 				return [
 					{ model: models.User, attributes: ['username', 'createdAt', 'id', 'color'] }, 
 					{ model: models.Thread, include: [models.Category]} ,
