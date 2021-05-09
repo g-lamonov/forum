@@ -289,17 +289,16 @@
 					}
 				})
 			this.axios.get(baseURL + '/api/v1/category')
-				.then(res => {
-					res.data.push({ name: 'All', value: 'ALL' })
-					this.$store.commit('addCategories', res.data)
-				}).catch(this.ajaxErrorHandler)
+				.then(res => this.$store.commit('addCategories', res.data))
+				.catch(this.ajaxErrorHandler)
 		}
 	}
 </script>
 
 <style lang='scss'>
 	@import url('https://fonts.googleapis.com/css?family=Lato:300,300i,400|Montserrat');
-	@import './assets/scss/variables.scss';
+	@import './assets/scss/variables.scss';		
+	@import './assets/scss/elementStyles.scss';
 	html, body {
 		width: 100%;
 		height: 100%;

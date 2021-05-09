@@ -10,7 +10,6 @@ import store from './store/index'
 
 import Index from './components/routes/Index'
 import Start from './components/routes/Start'
-import Category from './components/routes/Category'
 import Thread from './components/routes/Thread'
 import ThreadNew from './components/routes/ThreadNew'
 
@@ -33,9 +32,9 @@ Vue.use(VueAxios, axios)
 
 const router = new VueRouter({
 	routes: [
-		{ path: '/', component: Index },
+		{ path: '/', redirect: '/category/all' },
+		{ path: '/category/:category', component: Index },
 		{ path: '/start', component: Start },
-		{ path: '/category/:category', component: Category },
 		{ path: '/thread/:slug/:id', component: Thread },
 		{ path: '/thread/:slug/:id/:post_id', component: Thread },
 		{ path: '/thread/new', component: ThreadNew },
@@ -52,11 +51,13 @@ const router = new VueRouter({
 	mode: 'history'
 })
 
-Vue.filter('formatDate', function (value, format = '', join = ' ') {
+Vue.filter('formatDate', function (value, /*format = '', join = ' '*/) {
 	if(typeof value !== 'object') {
 		value = new Date(value)
 	}
-
+	
+	let sinceNow = new Date(new Date() - value)
+	
 	//Add leading zero if under 10
 	function lz(num) {
 		if(num < 10) {
@@ -66,20 +67,32 @@ Vue.filter('formatDate', function (value, format = '', join = ' ') {
 		}
 	}
 
-	function formatSegment(segment) {
-		if(segment === 'time') {
-			return value.toTimeString().slice(0, 5);
-		}
-		if(segment === 'date') {
-			return (
-				lz(value.getDate()) + '/' +
-				lz(value.getMonth() + 1) + '/' +
-				value.getUTCFullYear()
-			);
+	function p(word, num) {
+		if(num === 1) {
+			return word
+		} else {
+			return word + 's'
 		}
 	}
 
-	return format.split('|').map(formatSegment).join(join);
+
+	if(sinceNow <= 1000*60*2) {
+		return 'Just now'
+	} else if(sinceNow <= 1000*60*60) {
+		return sinceNow.getMinutes()  + ' minutes ago'
+	} else if(sinceNow <= 1000*60*60*24) {
+		let hours = sinceNow.getHours()
+		return hours + ' ' + p('hour', hours) + ' ago'
+	} else if(sinceNow <= 1000*60*60*24*2) {
+		let days = Math.floor(sinceNow / 1000*60*60*24)
+		return days + ' ' + p('day', days) + ' ago'
+	} else {
+		return (
+			lz(value.getDate()) + '/' +
+			lz(value.getMonth() + 1) + '/' +
+			value.getUTCFullYear()
+		); 
+	}
 });
 
 Vue.filter('stripTags', function (value) {

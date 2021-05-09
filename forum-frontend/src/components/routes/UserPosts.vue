@@ -5,6 +5,7 @@
 			:loading='loadingPosts'
 			:showNext='nextURL !== null'
 			@loadNext='loadNewPosts'
+			message='posts'
 			v-if='sortedPosts.length'
 		>
 			<thread-post
@@ -39,9 +40,10 @@
 		},
 		computed: {
 			sortedPosts () {
-				return this.posts.sort((a, b) => {
-					return new Date(a.createdAt) - new Date(b.createdAt)
-				})
+				// return this.posts.sort((a, b) => {
+				return  this.posts
+					// new Date(a.createdAt) - new Date(b.createdAt)
+				// })
 			}
 		},
 		methods: {

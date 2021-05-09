@@ -28,6 +28,7 @@
 				:loading='loadingPosts'
 				:showNext='$store.state.thread.nextURL !== null'
 				:showPrevious='$store.state.thread.previousURL !== null'
+				message='posts'
 				@loadNext='loadNextPosts'
 				@loadPrevious='loadPreviousPosts'
 			>
@@ -52,7 +53,7 @@
 	import ScrollLoad from '../ScrollLoad'
 	import ThreadPost from '../ThreadPost'
 	import throttle from 'lodash.throttle'
-	import AjaxErrorHandler from '../../assets/js/errorHandler'
+	// import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'Thread',
 		components: {

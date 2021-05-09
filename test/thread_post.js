@@ -69,6 +69,7 @@ describe('Thread and post', () => {
 			res.should.have.status(200)
 			res.should.be.json
 			res.body.should.have.property('name', 'thread')
+			res.body.should.have.property('postCount', 0)
 			res.body.should.have.property('slug', 'thread')
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.deep.property('Category.name', 'category_name')
@@ -177,8 +178,10 @@ describe('Thread and post', () => {
 			res.should.be.json
 			res.should.have.status(200)
 			res.body.should.have.property('content', '<p>content</p>\n')
+			res.body.should.have.property('postNumber', 1)
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.deep.property('Thread.name', 'thread')
+			res.body.should.have.deep.property('Thread.postsCount', 1)
 
 		})
 		it('should return an error if not logged in', async () => {
@@ -278,9 +281,11 @@ describe('Thread and post', () => {
 
 			res.should.be.json
 			res.should.have.status(200)
+			res.body.should.have.property('postNumber', 2)
 			res.body.should.have.property('content', '<p>another post</p>\n')
 			res.body.should.have.deep.property('User.username', 'username1')
 			res.body.should.have.deep.property('Thread.name', 'thread')
+			res.body.should.have.deep.property('Thread.postsCount', 2)
 			res.body.should.have.property('replyingToUsername', 'username')
 			res.body.should.have.property('Replies').that.deep.equals([])
 		})
@@ -349,6 +354,7 @@ describe('Thread and post', () => {
 			res.should.have.status(200)
 			res.should.be.json
 			res.body.should.have.property('name', 'thread')
+			res.body.should.have.property('postsCount', 0)
 			res.body.should.have.deep.property('Category.name', 'category_name')
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.property('Posts')
@@ -460,6 +466,7 @@ describe('Thread and post', () => {
 			res.body.should.have.property('content', '<p>content</p>\n')
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.deep.property('Thread.name', 'thread')
+			res.body.should.have.deep.property('Thread.postsCount', 1)
 			res.body.should.have.deep.property('Thread.Category.name', 'category_name')
 			res.body.should.have.deep.property('Replies.0.User.username', 'username1')
 		})

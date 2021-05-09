@@ -275,7 +275,6 @@
 			overflow: auto;
 			word-break: break-word;
 			padding: 0.5rem;
-			padding-top: 0;
 			@at-root #{&}--empty {
 				@include text($font--role-emphasis, 1rem);
 				display: flex;
