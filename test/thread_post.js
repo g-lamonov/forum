@@ -9,7 +9,6 @@ let { sequelize } = require('../models')
 
 const Errors = require('../lib/errors.js')
 let PAGINATION_THREAD_ID
-let MID_PAGINATION_POST_ID
 
 chai.use(require('chai-http'))
 chai.use(require('chai-things'))
@@ -69,7 +68,7 @@ describe('Thread and post', () => {
 			res.should.have.status(200)
 			res.should.be.json
 			res.body.should.have.property('name', 'thread')
-			res.body.should.have.property('postCount', 0)
+			res.body.should.have.property('postsCount', 0)
 			res.body.should.have.property('slug', 'thread')
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.deep.property('Category.name', 'category_name')
@@ -178,7 +177,7 @@ describe('Thread and post', () => {
 			res.should.be.json
 			res.should.have.status(200)
 			res.body.should.have.property('content', '<p>content</p>\n')
-			res.body.should.have.property('postNumber', 1)
+			res.body.should.have.property('postNumber', 0)
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.deep.property('Thread.name', 'thread')
 			res.body.should.have.deep.property('Thread.postsCount', 1)
@@ -281,7 +280,7 @@ describe('Thread and post', () => {
 
 			res.should.be.json
 			res.should.have.status(200)
-			res.body.should.have.property('postNumber', 2)
+			res.body.should.have.property('postNumber', 1)
 			res.body.should.have.property('content', '<p>another post</p>\n')
 			res.body.should.have.deep.property('User.username', 'username1')
 			res.body.should.have.deep.property('Thread.name', 'thread')
@@ -354,7 +353,6 @@ describe('Thread and post', () => {
 			res.should.have.status(200)
 			res.should.be.json
 			res.body.should.have.property('name', 'thread')
-			res.body.should.have.property('postsCount', 0)
 			res.body.should.have.deep.property('Category.name', 'category_name')
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.property('Posts')
@@ -392,24 +390,24 @@ describe('Thread and post', () => {
 						.set('content-type', 'application/json')
 						.send({ threadId: threadOther.body.id, content: `POST OTHER ${i}` })
 				}
-
-				if(i === 15) MID_PAGINATION_POST_ID = post.body.id
 			}
 
 			let pageOne = await userAgent.get('/api/v1/thread/' + thread.body.id)
 			let pageTwo = await userAgent.get(pageOne.body.meta.nextURL)
 			let pageThree = await userAgent.get(pageTwo.body.meta.nextURL)
-			let pageInvalid = await userAgent.get('/api/v1/thread/' + thread.body.id + '?lastId=' + 100)
+			let pageInvalid = await userAgent.get('/api/v1/thread/' + thread.body.id + '?from=' + 100)
 
 			pageOne.body.Posts.should.have.length(10)
-			pageOne.body.meta.should.have.property('previousURL', null)
+			pageOne.body.meta.should.have.property('postsRemaining', 20)
 			pageOne.body.Posts[0].should.have.property('content', '<p>POST 0</p>\n')
 
 			pageTwo.body.Posts.should.have.length(10)
+			pageTwo.body.meta.should.have.property('postsRemaining', 10)
 			pageTwo.body.Posts[0].should.have.property('content', '<p>POST 10</p>\n')
 			pageTwo.body.meta.should.have.property('previousURL')
 
 			pageThree.body.Posts.should.have.length(10)
+			pageThree.body.meta.should.have.property('postsRemaining', 0)
 			pageThree.body.Posts[0].should.have.property('content', '<p>POST 20</p>\n')
 			pageThree.body.Posts[9].should.have.property('content', '<p>POST 29</p>\n')
 			expect(pageThree.body.meta.nextURL).to.be.null
@@ -419,7 +417,8 @@ describe('Thread and post', () => {
 		it('should allow you to get an individual and surrounding posts', async () => {
 			let http = chai.request(server)
 			
-			let pageOne = await http.get(`/api/v1/thread/${PAGINATION_THREAD_ID}?postId=${MID_PAGINATION_POST_ID}`)
+			let pageOne = await http.get(`/api/v1/thread/${PAGINATION_THREAD_ID}?postNumber=15`)
+
 			let pageZero = await http.get(pageOne.body.meta.previousURL)
 			let pageTwo = await http.get(pageOne.body.meta.nextURL)
 
@@ -427,19 +426,24 @@ describe('Thread and post', () => {
 			pageOne.body.Posts[0].should.have.property('content', '<p>POST 11</p>\n')
 			pageOne.body.Posts[4].should.have.property('content', '<p>POST 15</p>\n')
 			pageOne.body.Posts[9].should.have.property('content', '<p>POST 20</p>\n')
+			pageOne.body.meta.should.have.property('postsRemaining', 9)
 
 			pageTwo.body.Posts.should.have.length(9)
 			pageTwo.body.Posts[0].should.have.property('content', '<p>POST 21</p>\n')
 			pageTwo.body.Posts[8].should.have.property('content', '<p>POST 29</p>\n')
 			pageTwo.body.meta.should.have.property('nextURL', null)
+			pageTwo.body.meta.should.have.property('postsRemaining', 0)
 			
 			pageZero.body.Posts.should.have.length(10)
 			pageZero.body.Posts[0].should.have.property('content', '<p>POST 1</p>\n')
 			pageZero.body.Posts[9].should.have.property('content', '<p>POST 10</p>\n')
+			pageZero.body.meta.should.have.property('postsRemaining', 19)
+
 
 			let pageFirst = await http.get(pageZero.body.meta.previousURL)
 			pageFirst.body.Posts[0].should.have.property('content', '<p>POST 0</p>\n')
 			pageFirst.body.meta.should.have.property('previousURL', null)
+			pageFirst.body.meta.should.have.property('postsRemaining', 29)
 
 		})
 		it('should return an error if :id is invalid', async () => {
@@ -466,7 +470,6 @@ describe('Thread and post', () => {
 			res.body.should.have.property('content', '<p>content</p>\n')
 			res.body.should.have.deep.property('User.username', 'username')
 			res.body.should.have.deep.property('Thread.name', 'thread')
-			res.body.should.have.deep.property('Thread.postsCount', 1)
 			res.body.should.have.deep.property('Thread.Category.name', 'category_name')
 			res.body.should.have.deep.property('Replies.0.User.username', 'username1')
 		})
