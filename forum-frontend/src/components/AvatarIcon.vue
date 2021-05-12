@@ -24,6 +24,7 @@
 		<div
 			slot='display'
 			class='avatar_icon__icon'
+			:class='{"avatar_icon__icon--small": size === "small"}'
 			:style='{ "background-color": user.color }'
 			@click='goToUser'
 		>
@@ -37,7 +38,7 @@
 	import AjaxErrorHandler from '../assets/js/errorHandler'
 	export default {
 		name: 'AvatarIcon',
-		props: ['user'],
+		props: ['user', 'size'],
 		components: { InfoTooltip },
 		data () {
 			return {

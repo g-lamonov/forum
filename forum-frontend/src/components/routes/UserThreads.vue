@@ -8,19 +8,7 @@
 			message='threads'
 			v-if='threads.length'
 		>
-			<div
-				class='user_threads__thread'
-				v-for='(thread, index) in threads'
-				:key='thread'
-				:class='{"user_threads__thread--last": index === threads.length-1}'
-				@click='goToThread(thread)'
-			>
-				<div class='user_threads__thread_bar'>
-					<div class='user_threads__category'>{{thread.Category.name}}</div>
-					<div class='user_threads__date'>{{thread.createdAt | formatDate('date')}}</div>
-				</div>
-				<div class='user_threads__name'>{{thread.name}}</div>
-			</div>
+			<thread-display v-for='thread in threads' :key='thread' :thread='thread'></thread-display>
 		</scroll-load>
 		<template v-else>This user hasn't started any threads yet</template>
 	</div>
@@ -28,13 +16,13 @@
 
 <script>
 	import ScrollLoad from '../ScrollLoad'
-	// import ThreadPost from '../ThreadPost'
+	import ThreadDisplay from '../ThreadDisplay'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'userThreads',
 		props: ['username'],
 		components: {
-			// ThreadPost,
+			ThreadDisplay,
 			ScrollLoad
 		},
 		data () {
@@ -59,9 +47,6 @@
 						this.loadingThreads = false
 						AjaxErrorHandler(this.$store)(e)
 					})
-			},
-			goToThread (thread) {
-				this.$router.push('/thread/' + thread.slug + '/' + thread.id)
 			}
 		},
 		created () {

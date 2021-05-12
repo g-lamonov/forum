@@ -2,15 +2,12 @@ let express = require('express')
 let router = express.Router()
 
 const Errors = require('../lib/errors')
-let { Category } = require('../models')
+let pagination = require('../lib/pagination')
+let { Category, Post, Thread, User } = require('../models')
 
 router.get('/', async (req, res) => {
 	try {
-		let categories = await Category.findAll({
-			attributes: { exclude: ['id'] },
-			include: Category.includeOptions(1)/*,
-			order: ['updatedAt', 'DESC']*/
-		})
+		let categories = await Category.findAll()
 
 		res.json(categories)
 	} catch (e) {
@@ -24,35 +21,112 @@ router.get('/', async (req, res) => {
 
 
 router.get('/:category', async (req, res) => {
+	function concatenateThreads(threads) {
+		let processedThreads = []
+		
+		threads.forEach(category => {
+			let jsonCategory = category.toJSON()
+			processedThreads.push(...jsonCategory.Threads)
+		})
+
+		return processedThreads
+	}
+
 	try {
-		let threads
+		let threads, threadsLatestPost, resThreads, user
+		let { from, limit } = pagination.getPaginationProps(req.query)
+
+		if(req.query.username) {
+			user = await User.findOne({ where: { username: req.query.username }})
+		}
+
+		function threadInclude(order) {
+			let options = {
+				model: Thread,
+				limit,
+				where: {
+					id: { $gte: from }
+					
+				},
+				include: [
+					Category,
+					{ model: User, attributes: ['username', 'createdAt', 'id', 'color'] }, 
+					{
+						model: Post, limit: 1, order: [['id', order]], include:
+						[{ model: User, attributes: ['username', 'id'] }]
+					}
+				]
+			}
+
+			if(user) {
+				options.where.userId = user.id
+			}
+
+			return [options]
+		}
 
 		if(req.params.category === 'ALL') {
-			threads = await Category.findAll({ include: Category.includeOptions() })
+			threads = await Category.findAll({ include: threadInclude('ASC') })
+			threadsLatestPost = await Category.findAll({ include: threadInclude('DESC') })
 		} else {
 			threads = await Category.findOne({
 				where: { name: req.params.category },
-				include: Category.includeOptions()
+				include: threadInclude('ASC')
+			})
+
+			threadsLatestPost = await Category.findOne({
+				where: { name: req.params.category },
+				include: threadInclude('DESC')
 			})
 		}
 
 		if(!threads) throw Errors.invalidParameter('id', 'thread does not exist')
 		
 		if(Array.isArray(threads)) {
-			let processedThreads = []
-			threads.forEach(category => {
-				let jsonCategory = category.toJSON()
-				processedThreads.push(...jsonCategory.Threads)
-			})
-
-			res.json({
+			resThreads = {
 				name: 'All',
 				value: 'ALL',
-				Threads: processedThreads
-			})
+				Threads: concatenateThreads(threads),
+				meta: {}
+			}
+
+			threadsLatestPost = { Threads: concatenateThreads(threadsLatestPost) }
 		} else {
-			res.json(threads.toJSON())
+			resThreads = threads.toJSON()
+			resThreads.meta = {}
 		}
+
+		threadsLatestPost.Threads.forEach((thread, i) => {
+			let first = resThreads.Threads[i].Posts[0]
+			let latest = thread.Posts[0]
+
+			if(first.id === latest.id) return
+
+			resThreads.Threads[i].Posts.push(latest)
+		})
+
+
+		let nextId = await pagination.getNextId(Thread, user ? { userId: user.id } : {}, resThreads.Threads)
+
+		if(nextId) {
+			resThreads.meta.nextURL =
+				`/api/v1/category/${req.params.category}?&limit=${limit}&from=${nextId + 1}`
+
+			if(user) {
+				resThreads.meta.nextURL += '&username=' + user.username
+			}
+
+			resThreads.meta.nextThreadsCount = await pagination.getNextCount(
+				Thread, resThreads.Threads, limit,
+				{ userId: user.id }
+			)
+		} else {
+			resThreads.meta.nextURL = null
+			resThreads.meta.nextThreadsCount = 0
+		}
+
+		res.json(resThreads)
+
 	} catch (e) {
 		if(e.name === 'invalidParameter') {
 			res.status(400)

@@ -1,18 +1,11 @@
 <template>
 	<div class='route_container'>
 		<div class='thread_sorting'>
-			<div>
-				<select-options
-					:options='displayOptions'
-					class='thread_sorting__display'
-					v-model='selectedDisplayOption'
-				></select-options>
-				<select-options
-					:options='filterOptions'
-					v-model='selectedFilterOption'
-					class='thread_sorting__filter'
-				></select-options>
-			</div>
+			<select-options
+				:options='filterOptions'
+				v-model='selectedFilterOption'
+				class='thread_sorting__filter'
+			></select-options>
 			<button class='button' v-if='this.$store.state.username' @click='$router.push("/thread/new")'>Post new thread</button>
 		</div>
 		<div class='threads_main'>
@@ -22,7 +15,7 @@
 				</div>
 				<div
 					v-for='category in categories'
-					:key = 'category'
+					:key='category'
 					class='threads_main__side_bar__menu_item'
 					:class='{"threads_main__side_bar__menu_item--selected": category.value === selectedCategory}'
 					@click='selectedCategory = category.value'
@@ -34,33 +27,9 @@
 					{{category.name}}
 				</div>
 			</div>
-			<table class='threads_main__threads' v-if='filteredThreads.length'>
-				<colgroup>
-					<col span="1" style="width: 50%;">
-					<col span="1" style="width: 22.5%;">
-					<col span="1" style="width: 22.5%;">
-					<col span="1" style="width: 5%;">
-				</colgroup>
-				<thead>
-					<tr class='thread thread--header'>
-						<th>Title</th>
-						<th>Latest post</th>
-						<th>Category</th>
-						<th>Replies</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr class='thread' v-for='thread in filteredThreads' :key= 'thread' @click='navigateToThread(thread.slug, thread.id)'>
-						<td>{{thread.name}}</td>
-						<td>
-							<div>{{thread.Posts[0].content | stripTags | truncate(100)}}</div>
-							<div>{{thread.Posts[0].createdAt | formatDate('time|date', ' - ') }}</div>
-						</td>
-						<td>{{thread.Category.name}}</td>
-						<td>{{thread.postsCount-1}}</td>
-					</tr>
-				</tbody>
-			</table>
+			<div class='threads_main__threads' v-if='filteredThreads.length'>
+				<thread-display v-for='thread in filteredThreads' :key='thread' :thread='thread'></thread-display>
+			</div>
 			<div v-else class='threads_main__threads thread--empty'>No threads or posts.</div>
 		</div>
 	</div>
@@ -68,12 +37,14 @@
 
 <script>
 	// import TabView from '../TabView'
+	import ThreadDisplay from '../ThreadDisplay'
 	import SelectOptions from '../SelectOptions'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'index',
 		components: {
 			// TabView,
+			ThreadDisplay,
 			SelectOptions
 		},
 		data () {
@@ -84,11 +55,6 @@
 					{name: 'No replies', value: 'NO_REPLIES'}
 				],
 				selectedFilterOption: 'NEW',
-				displayOptions: [
-					{ name: 'Threads', value: 'THREADS' },
-					{ name: 'Posts', value: 'POSTS' }
-				],
-				selectedDisplayOption: 'THREADS',
 				threads: []
 			}
 		},
@@ -122,7 +88,8 @@
 				});
 			},
 			categories () {
-				return this.$store.state.meta.categories
+				console.log(this.$store.getters.alphabetizedCategories)
+				return this.$store.getters.alphabetizedCategories
 			},
 			selectedCategory: {
 				set (val) {

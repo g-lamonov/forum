@@ -135,42 +135,28 @@ router.get('/:username', async (req, res) => {
 			resUser.meta = {}
 
 			let lastPost = user.Posts.slice(-1)[0]
-
 			if(!lastPost || lastPost.postNumber+1 === lastPost.Thread.postsCount) {
 				resUser.meta.nextURL = null
+				resUser.meta.nextPostsCount = 0
 			} else {
 				resUser.meta.nextURL =
 					`/api/v1/user/${user.username}?posts=true&limit=${limit}&from=${lastPost.postNumber + 1}`
+
+				resUser.meta.nextPostsCount = await pagination.getNextCount(
+					Post, lastPost, limit,
+					{ UserId: user.id }
+				)
 			}
 
 			res.json(resUser)
 		} else if(req.query.threads) {
-			let { from, limit } = pagination.getPaginationProps(req.query)
+			let queryString = ''
 
-			queryObj.include = [{
-				model: Thread,
-				include: [Category],
-				limit,
-				where: { id: { $gt: from } },
-				order: [['id', 'ASC']]
-			}]
+			Object.keys(req.query).forEach(query => {
+				queryString += `&${query}=${req.query[query]}`
+			})
 
-			let user = await User.findOne(queryObj)
-			if(!user) throw Errors.accountDoesNotExist
-
-			let resUser = user.toJSON()
-			resUser.meta = {}
-
-			let nextId = await pagination.getNextId(Thread, { userId: user.id }, resUser.Threads)
-
-			if(nextId) {
-				resUser.meta.nextURL =
-					`/api/v1/user/${user.username}?threads=true&limit=${limit}&from=${nextId}`
-			} else {
-				resUser.meta.nextURL = null
-			}
-
-			res.json(resUser)
+			res.redirect('/api/v1/category/ALL?username=' + req.params.username + queryString)
 		} else {
 			let user = await User.findOne(queryObj)
 			if(!user) throw Errors.accountDoesNotExist

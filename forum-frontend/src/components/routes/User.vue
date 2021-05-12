@@ -116,6 +116,7 @@
 	}
 	.user__links {
 		width: 10rem;
+		display: table;
 		@at-root #{&}__menu_item {
 			cursor: pointer;
 			margin-bottom: 0.5rem;
