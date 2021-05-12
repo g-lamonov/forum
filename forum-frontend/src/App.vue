@@ -77,7 +77,7 @@
 			</div>
 			<div class='header__group'>
 				<template v-if='$store.state.username'>
-					<loading-button @click='logout' :loading='loadingLogout'>
+					<loading-button @click='logout' class='button--blue' :loading='loadingLogout'>
 						Log out
 					</loading-button>
 				</template>
@@ -85,13 +85,13 @@
 					<div class='button button--green' @click='showAccountModalTab(0)'>
 						Sign up
 					</div>
-					<div class='button' @click='showAccountModalTab(1)'>
+					<div class='button button--blue' @click='showAccountModalTab(1)'>
 						Login
 					</div>
 				</template>
 				<div class='search' tabindex='0'>
 					<input class='search__field' placeholder='Search this forum'>
-					<button class='button button--borderless'><span class='fa fa-search'></span></button>
+					<button class='button button--borderless search__button'><span class='fa fa-search'></span></button>
 				</div>
 			</div>
 		</header>
@@ -106,7 +106,6 @@
 	import LoadingButton from './components/LoadingButton'
 	// import mapGetters from 'vuex'
 	import AjaxErrorHandler from './assets/js/errorHandler'
-	import baseURL from './utils/helpers'
 	let { addFlexBoxChildren } = require('./assets/js/flexBoxGridCorrect')
 	export default {
 		name: 'app',
@@ -186,7 +185,6 @@
 			logout () {
 				this.loadingLogout = true
 				this.axios.post(
-					baseURL +
 					'/api/v1/user/' +
 					this.$store.state.username +
 					'/logout'
@@ -229,7 +227,7 @@
 					this.signup.errors.confirmPassword = 'Passwords must match'
 				} else {
 					this.signup.loading = true
-					this.axios.post(baseURL + '/api/v1/user', {
+					this.axios.post('/api/v1/user', {
 						username: this.signup.username,
 						password: this.signup.password
 					}).then(res => {
@@ -254,7 +252,7 @@
 					return
 				}
 				this.login.loading = true
-				this.axios.post(baseURL + `/api/v1/user/${this.login.username}/login`, {
+				this.axios.post(`/api/v1/user/${this.login.username}/login`, {
 					password: this.login.password
 				}).then(res => {
 					this.login.loading = false
@@ -272,7 +270,7 @@
 			}
 		},
 		created () {
-			this.axios.get(baseURL + '/api/v1/settings')
+			this.axios.get('/api/v1/settings')
 				.then(res => {
 					let usernameCookie = document.cookie
 						.split(';')
@@ -288,7 +286,7 @@
 						this.ajaxErrorHandler(err)
 					}
 				})
-			this.axios.get(baseURL + '/api/v1/category')
+			this.axios.get('/api/v1/category')
 				.then(res => this.$store.commit('addCategories', res.data))
 				.catch(this.ajaxErrorHandler)
 		}
@@ -297,7 +295,7 @@
 
 <style lang='scss'>
 	@import url('https://fonts.googleapis.com/css?family=Lato:300,300i,400|Montserrat');
-	@import './assets/scss/variables.scss';		
+	@import './assets/scss/variables.scss';
 	@import './assets/scss/elementStyles.scss';
 	html, body {
 		width: 100%;
@@ -322,15 +320,16 @@
 	}
 	.header {
 		width: 100%;
-		padding: 1rem 2rem;
+		padding: 0.5rem 2rem;
 		position: fixed;
 		top: 0;
 		z-index: 2;
-		background-color: #fff;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		border-bottom: 0.125rem solid $color__gray--primary;
+		border-bottom: 0.125rem solid $color__blue--darker;
+		background-color: $color__blue--primary;
+		color: #fff;
 		@at-root #{&}__group {
 			display: flex;
 			> * { margin: 0 0.5rem; }
@@ -343,85 +342,27 @@
 		@include user-select(none);
 		cursor: pointer;
 	}
-	.button {
-		border: 0.125rem solid $color__gray--primary;
-		display: inline-block;
-		text-align: center;
-		@include text($font--role-default, 1rem, 400);
-		padding: 0.5rem;
-		cursor: pointer;
-		background-color: #fff;
-		transition: background-color 0.2s, border-color 0.2s;
-		outline: none;
-		&:hover {
-			background-color: $color__lightgray--primary;
-			border-color: $color__gray--darker;
-		}
-		&:active {
-			background-color: $color__lightgray--darker;
-			border-color: $color__gray--darkest;
-		}
-		@at-root #{&}__icon {
-		}
-		@at-root #{&}--borderless {
-			border: 0;
-		}
-		@at-root #{&}--modal {
-			padding: 0.25rem 0.5rem;
-			font-size: 0.8rem;
-			float: right;
-			margin-bottom: 1rem;
-			&:last-child {
-				margin-right: 0.5rem;
-			}
-		}
-		@at-root #{&}--orange {
-			border-color: $color__orange--primary;
-			&:hover { border-color: $color__orange--darker; }
-			&:active { border-color: $color__orange--darkest; }
-		}
-		@at-root #{&}--green {
-			background-color: $color__green--primary;
-			color: #fff;
-			border-color: $color__green--darker;
-			&:hover { 
-				border-color: $color__green--darker;
-				background-color: rgba(75, 171, 79, 0.86);
-			}
-			&:active {
-				border-color: $color__green--darker;
-				background-color: $color__green--darkester;
-			}
-		}
-	}
-	.input {
-		border: 0.125rem solid $color__gray--primary;
-		@include text;
-		padding: 0.25rem;
-		outline: none;
-		&:hover {
-			border-color: $color__gray--darker;
-		}
-		&:focus {
-			border-color: $color__gray--darkest;
-		}
-	}
 	.search {
-		border: 0.125rem solid $color__gray--primary;
-		&:hover {
-			border-color: $color__gray--darker;
-		}
-		&:focus {
-			border-color: $color__gray--darkest;
-		}
+		background-color: $color__blue--darker;
+		border: 0.125rem solid $color__blue--darkest;
 		@at-root #{&}__field {
 			outline: none;
 			height: 100%;
 			padding: 0 0.5rem;
 			border: 0;
+			background-color: $color__blue--darker;
 			@include text;
+			color: #fff;
 			@include placeholder {
 				@include text;
+				color: $color__lightgray--darker;
+			}
+		}
+		@at-root #{&}__button {
+			background-color: $color__blue--darker;
+			color: #fff;
+			&:hover {
+				background-color: $color__blue--primary;
 			}
 		}
 	}
