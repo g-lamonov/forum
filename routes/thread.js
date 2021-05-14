@@ -134,6 +134,11 @@ router.post('/', async (req, res) => {
 			]
 		}))
 
+		req.app.get('io').emit('new thread', {
+			name: category.name,
+			value: category.value
+		})
+
 	} catch (e) {
 		if(e === Errors.VALIDATION_ERROR) {
 			res.status(400)

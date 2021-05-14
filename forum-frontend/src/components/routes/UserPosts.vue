@@ -4,21 +4,22 @@
 		<scroll-load
 			:loading='loadingPosts'
 			@loadNext='loadNewPosts'
-			v-if='sortedPosts.length'
+			v-if='posts.length'
 		>
 			<thread-post
-				v-for='(post, index) in sortedPosts'
+				v-for='(post, index) in posts'
 				:key='post'
 				:post='post'
 				:show-thread='true'
 				:class='{"post--last": index === posts.length-1}'
 			></thread-post>
+			<div v-if='loadingPosts'>
 			<thread-post-placeholder
-				v-if='loadingPosts'
 				v-for='n in nextPostsCount'
 				:key='n'
 			>
 			</thread-post-placeholder>
+			</div>
 		</scroll-load>
 		<template v-else>This user hasn't posted anything yet</template>
 	</div>
@@ -43,14 +44,6 @@
 				loadingPosts: false,
 				nextPostsCount: 0,
 				nextURL: ''
-			}
-		},
-		computed: {
-			sortedPosts () {
-				// return this.posts.sort((a, b) => {
-				return  this.posts
-					// new Date(a.createdAt) - new Date(b.createdAt)
-				// })
 			}
 		},
 		methods: {

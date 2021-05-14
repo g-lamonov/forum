@@ -5,16 +5,16 @@
 </template>
 
 <script>
-	import LoadingButton from './LoadingButton'
+	// import LoadingButton from './LoadingButton'
 	import throttle from 'lodash.throttle'
 	export default {
 		name: 'ScrollLoad',
 		props: ['loading'],
 		components: {
-			LoadingButton
+			// LoadingButton
 		},
 		methods: {
-			onScroll (e) {
+			onScroll () {
 				if(document.body.scrollHeight - document.body.scrollTop - 300 <= document.body.clientHeight) {
 					if(!this.loading) {
 						this.$emit('loadNext')

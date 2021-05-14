@@ -9,6 +9,12 @@
 			v-if='threads.length'
 		>
 			<thread-display v-for='thread in threads' :key='thread' :thread='thread'></thread-display>
+			<div v-if='loadingThreads'>
+			<thread-display-placeholder
+				v-for='n in nextThreadsCount'
+				:key='n'
+			></thread-display-placeholder>
+			</div>
 		</scroll-load>
 		<template v-else>This user hasn't started any threads yet</template>
 	</div>
@@ -17,19 +23,23 @@
 <script>
 	import ScrollLoad from '../ScrollLoad'
 	import ThreadDisplay from '../ThreadDisplay'
+	import ThreadDisplayPlaceholder from '../ThreadDisplayPlaceholder'
+
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'userThreads',
 		props: ['username'],
 		components: {
 			ThreadDisplay,
+			ThreadDisplayPlaceholder,
 			ScrollLoad
 		},
 		data () {
 			return {
 				threads: [],
 				loadingThreads: false,
-				nextURL: ''
+				nextURL: '',
+				nextThreadsCount: 0
 			}
 		},
 		methods: {
@@ -42,6 +52,7 @@
 						this.loadingThreads = false
 						this.threads.push(...res.data.Threads)
 						this.nextURL = res.data.meta.nextURL
+						this.nextThreadsCount = res.data.meta.nextThreadsCount
 					})
 					.catch((e) => {
 						this.loadingThreads = false
@@ -55,6 +66,7 @@
 				.then(res => {
 					this.threads = res.data.Threads
 					this.nextURL = res.data.meta.nextURL
+					this.nextThreadsCount = res.data.meta.nextThreadsCount
 				})
 				.catch(AjaxErrorHandler(this.$store))
 		}

@@ -13,7 +13,6 @@ chai.use(require('chai-http'))
 chai.use(require('chai-things'))
 
 describe('User', () => {
-	//Wait for app to start before commencing
 	before((done) => {
 		if(server.locals.appStarted) done()
 			
@@ -22,8 +21,6 @@ describe('User', () => {
 		})
 	})
 
-	//Delete all rows in table after
-	//tests completed
 	after(() => sequelize.sync({ force: true }) )
 
 	describe('/ POST user', () => {
@@ -342,12 +339,13 @@ describe('User', () => {
 				.set('content-type', 'application/x-www-form-urlencoded')
 				.send({ username: 'paginationaccount', password: 'password' })
 
-			let thread = await agent
-				.post('/api/v1/thread')
-				.set('content-type', 'application/json')
-				.send({ category: 'categorynamehere', name: 'pagination' })
-
 			for(var i = 0; i < 30; i++) {
+				let thread = await agent
+					.post('/api/v1/thread')
+					.set('content-type', 'application/json')
+					.send({ category: 'categorynamehere', name: `THREAD ${i}` })
+
+
 				await agent
 					.post('/api/v1/post')
 					.set('content-type', 'application/json')
@@ -357,24 +355,20 @@ describe('User', () => {
 			let pageOne = await agent.get('/api/v1/user/paginationaccount?posts=true')
 			let pageTwo = await agent.get(pageOne.body.meta.nextURL)
 			let pageThree = await agent.get(pageTwo.body.meta.nextURL)
-			let pageInvalid = await agent.get('/api/v1/user/paginationaccount?posts=true&from=100')
 
 			pageOne.body.Posts.should.have.length(10)
 			pageOne.body.meta.should.have.property('nextPostsCount', 10)
-			pageOne.body.Posts[0].should.have.property('content', '<p>POST 0</p>\n')
+			pageOne.body.Posts[0].should.have.property('content', '<p>POST 29</p>\n')
 
 			pageTwo.body.Posts.should.have.length(10)
 			pageTwo.body.meta.should.have.property('nextPostsCount', 10)
-			pageTwo.body.Posts[0].should.have.property('content', '<p>POST 10</p>\n')
+			pageTwo.body.Posts[0].should.have.property('content', '<p>POST 19</p>\n')
 
 			pageThree.body.Posts.should.have.length(10)
 			pageThree.body.meta.should.have.property('nextPostsCount', 0)
-			pageThree.body.Posts[0].should.have.property('content', '<p>POST 20</p>\n')
-			pageThree.body.Posts[9].should.have.property('content', '<p>POST 29</p>\n')
+			pageThree.body.Posts[0].should.have.property('content', '<p>POST 9</p>\n')
+			pageThree.body.Posts[9].should.have.property('content', '<p>POST 0</p>\n')
 			expect(pageThree.body.meta.nextURL).to.be.null
-
-			pageInvalid.body.Posts.should.have.length(0)
-
 		})
 
 		it('should get threads as well if threads query is appended', async () => {
@@ -398,19 +392,29 @@ describe('User', () => {
 			}
 
 			let pageOne = await agent.get('/api/v1/user/threadaccount?threads=true')
+
+			//Add another newer thread
+			//This should not affect other tests
+			let thread = await agent
+					.post('/api/v1/thread')
+					.set('content-type', 'application/json')
+					.send({ category: 'categorynamehere', name: 'THREAD 20'})
+
+				await agent
+					.post('/api/v1/post')
+					.set('content-type', 'application/json')
+					.send({ threadId: thread.body.id, content: `POST 20` })
+
 			let pageTwo = await agent.get(pageOne.body.meta.nextURL)
-			let pageInvalid = await agent.get('/api/v1/user/threadaccount?threads=true&from=100')
 
 			pageOne.body.Threads.should.have.length(10)
-			pageOne.body.Threads[0].should.have.property('name', 'THREAD 0')
+			pageOne.body.Threads[0].should.have.property('name', 'THREAD 19')
 			pageOne.body.meta.should.have.property('nextThreadsCount', 10)
 
 			pageTwo.body.Threads.should.have.length(10)
-			pageTwo.body.Threads[0].should.have.property('name', 'THREAD 10')
+			pageTwo.body.Threads[0].should.have.property('name', 'THREAD 9')
 			pageTwo.body.meta.should.have.property('nextThreadsCount', 0)
 			expect(pageTwo.body.meta.nextURL).to.be.null
-
-			pageInvalid.body.Threads.should.have.length(0)
 		})
 	})
 

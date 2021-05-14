@@ -60,7 +60,7 @@
 	import FancyInput from './FancyInput'
 	import ReplyingTo from './ReplyingTo'
 	import AvatarIcon from './AvatarIcon'
-	import AjaxErrorHandler from '../assets/js/errorHandler'
+	// import AjaxErrorHandler from '../assets/js/errorHandler'
 	export default {
 		name: 'ThreadPost',
 		props: ['post', 'highlight', 'showReply', 'showThread'],
@@ -76,7 +76,7 @@
 			return {
 				hover: false,
 				showShareModal: false,
-				postURL: `${location.origin}/thread/${post.Thread.slug}/${post.ThreadId}/${post.id}`
+				postURL: `${location.origin}/thread/${post.Thread.slug}/${post.ThreadId}/${post.postNumber}`
 			}
 		},
 		methods: {

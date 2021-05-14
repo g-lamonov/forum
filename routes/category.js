@@ -21,20 +21,10 @@ router.get('/', async (req, res) => {
 
 
 router.get('/:category', async (req, res) => {
-	function concatenateThreads(threads) {
-		let processedThreads = []
-		
-		threads.forEach(category => {
-			let jsonCategory = category.toJSON()
-			processedThreads.push(...jsonCategory.Threads)
-		})
-
-		return processedThreads
-	}
 
 	try {
 		let threads, threadsLatestPost, resThreads, user
-		let { from, limit } = pagination.getPaginationProps(req.query)
+		let { from, limit } = pagination.getPaginationProps(req.query, true)
 
 		if(req.query.username) {
 			user = await User.findOne({ where: { username: req.query.username }})
@@ -43,11 +33,9 @@ router.get('/:category', async (req, res) => {
 		function threadInclude(order) {
 			let options = {
 				model: Thread,
+				order: [['id', 'DESC']],
 				limit,
-				where: {
-					id: { $gte: from }
-					
-				},
+				where: {},
 				include: [
 					Category,
 					{ model: User, attributes: ['username', 'createdAt', 'id', 'color'] }, 
@@ -62,12 +50,16 @@ router.get('/:category', async (req, res) => {
 				options.where.userId = user.id
 			}
 
+			if(from !== null) {
+				options.where.id = { $lte: from }
+			}
+
 			return [options]
 		}
 
 		if(req.params.category === 'ALL') {
-			threads = await Category.findAll({ include: threadInclude('ASC') })
-			threadsLatestPost = await Category.findAll({ include: threadInclude('DESC') })
+			threads = await Thread.findAll( threadInclude('ASC')[0] )
+			threadsLatestPost = await Thread.findAll( threadInclude('DESC')[0] )
 		} else {
 			threads = await Category.findOne({
 				where: { name: req.params.category },
@@ -86,11 +78,12 @@ router.get('/:category', async (req, res) => {
 			resThreads = {
 				name: 'All',
 				value: 'ALL',
-				Threads: concatenateThreads(threads),
+				Threads: threads,
 				meta: {}
 			}
 
-			threadsLatestPost = { Threads: concatenateThreads(threadsLatestPost) }
+			threadsLatestPost = { Threads: threadsLatestPost }
+
 		} else {
 			resThreads = threads.toJSON()
 			resThreads.meta = {}
@@ -106,11 +99,11 @@ router.get('/:category', async (req, res) => {
 		})
 
 
-		let nextId = await pagination.getNextId(Thread, user ? { userId: user.id } : {}, resThreads.Threads)
+		let nextId = await pagination.getNextIdDesc(Thread, user ? { userId: user.id } : {}, resThreads.Threads)
 
 		if(nextId) {
 			resThreads.meta.nextURL =
-				`/api/v1/category/${req.params.category}?&limit=${limit}&from=${nextId + 1}`
+				`/api/v1/category/${req.params.category}?&limit=${limit}&from=${nextId - 1}`
 
 			if(user) {
 				resThreads.meta.nextURL += '&username=' + user.username
@@ -118,7 +111,8 @@ router.get('/:category', async (req, res) => {
 
 			resThreads.meta.nextThreadsCount = await pagination.getNextCount(
 				Thread, resThreads.Threads, limit,
-				{ userId: user.id }
+				user ? { userId: user.id } : {},
+				true
 			)
 		} else {
 			resThreads.meta.nextURL = null

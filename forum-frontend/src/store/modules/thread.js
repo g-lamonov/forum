@@ -28,7 +28,7 @@ const getters = {
 }
 
 const actions = {
-	addPostAsync ({ state, commit, rootState }, vue) {
+	addPostAsync ({ state, commit }, vue) {
 		var post = {
 			content: state.editor.value,
 			threadId: +vue.$route.params.id
@@ -53,7 +53,7 @@ const actions = {
 			})
 			.catch(AjaxErrorHandler(vue.$store))
 	},
-	loadInitialPostsAsync ({ state, commit, rootState }, vue) {
+	loadInitialPostsAsync ({ commit }, vue) {
 		let postNumber = vue.$route.params.post_number
 		let apiURL = '/api/v1/thread/' + vue.$route.params.id
 
@@ -77,7 +77,7 @@ const actions = {
 				}
 			}).catch(AjaxErrorHandler(vue.$store))
 	},
-	loadPostsAsync ({ state, commit, rootState }, { vue, previous }) {
+	loadPostsAsync ({ state, commit }, { vue, previous }) {
 		let URL
 
 		if(previous) {

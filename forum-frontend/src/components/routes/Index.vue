@@ -33,7 +33,11 @@
 				:loading='loading'
 				@loadNext='getThreads'
 			>
-				<thread-display v-for='thread in filteredThreads' :key='thread' :thread='thread'></thread-display>
+				<div v-if='loadingNewer'><thread-display-placeholder v-for='n in newThreads' :key='n'></thread-display-placeholder></div>
+				<div class='threads_main__load_new' v-if='newThreads' @click='getNewerThreads'>
+					Load {{newThreads}} new {{newThreads | pluralize('thread')}}
+				</div>
+				<div v-if='loading'><thread-display v-for='thread in filteredThreads' :key='thread' :thread='thread'></thread-display></div>
 			<thread-display-placeholder v-for='n in nextThreadsCount' :key='n'></thread-display-placeholder>
 			</scroll-load>
 			<div v-else class='threads_main__threads thread--empty'>No threads or posts.</div>
@@ -49,6 +53,8 @@
 	import SelectOptions from '../SelectOptions'
 
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
+
+	let socket = require('socket.io-client')()
 
 	export default {
 		name: 'index',
@@ -71,7 +77,9 @@
 				nextThreadsCount: 0,
 				loading: false,
 
-				threads: []
+				threads: [],
+				newThreads: 0,
+				loadingNewer: false
 			}
 		},
 		computed: {
@@ -119,19 +127,38 @@
 			navigateToThread (slug, id) {
 				this.$router.push('/thread/' + slug + '/' + id);
 			},
-			getThreads () {
-				if(this.nextURL === null) return
+			getThreads (initial) {
+				if(this.nextURL === null && !initial) return
 				this.loading = true
 				this.axios
 					.get(this.nextURL || '/api/v1/category/' + this.selectedCategory)
 					.then(res => {
 						this.loading = false
-						this.threads.push(...res.data.Threads)
+
+						if(initial) {
+							this.threads = res.data.Threads
+						} else {
+							this.threads.push(...res.data.Threads)
+						}
+
 						this.nextURL = res.data.meta.nextURL
 						this.nextThreadsCount = res.data.meta.nextThreadsCount
 					})
 					.catch((e) => {
 						this.loading = false
+						AjaxErrorHandler(this.$store)(e)
+					})
+			},
+			getNewerThreads () {
+				this.axios
+					.get('/api/v1/category/' + this.selectedCategory + '?limit=' + this.newThreads)
+					.then(res => {
+						this.loadingNewer = false
+						this.newThreads = 0
+						this.threads.unshift(...res.data.Threads)
+					})
+					.catch((e) => {
+						this.loadingNewer = false
 						AjaxErrorHandler(this.$store)(e)
 					})
 			}
@@ -142,17 +169,28 @@
 			},
 			$route () {
 				this.selectedCategory = this.$route.path.split('/')[2].toUpperCase()
-				this.getThreads()
+				this.newThreads = 0
+				this.getThreads(true)
 			}
 		},
 		created () {
 			this.selectedCategory = this.$route.path.split('/')[2].toUpperCase()
-			this.getThreads()
+			this.getThreads(true)
+
+			socket.on('new thread', data => {
+				if(data.value === this.selectedCategory || this.selectedCategory == 'ALL') {
+					this.newThreads++
+				}
+			})
+		},
+		destroyed () {
+			socket.off('new thread')
 		}
 	}
 </script>
 
 <style lang='scss' scoped>
+	@import '../../assets/scss/elementStyles.scss';
 	@import '../../assets/scss/variables.scss';
 	.threads_main {
 		display: flex;
@@ -219,6 +257,17 @@
 		margin-left: 1rem;
 		width: calc(100% - 11rem);
 	}
+
+	.threads_main__load_new {
+		@extend .button;
+		font-size: 1.25rem;
+		margin: 0 0 1rem 0;
+		background-color: $color__lightgray--primary;
+		border-color: $color__gray--darker;
+		width: 100%;
+		font-weight: 300;
+	}
+
 	.thread {
 		background-color: #fff;
 		padding: 0.5rem 0;
