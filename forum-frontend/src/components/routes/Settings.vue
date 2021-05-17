@@ -4,7 +4,7 @@
 			<div
 				class='settings_menu__item'
 				v-for='(item, index) in menuItems'
-                :key='item'
+				:key='item'
 				:class="{'settings_menu__item--selected': index === selected}"
 				@click='$router.push("/settings/" + item.route)'
 			>
@@ -32,6 +32,11 @@
 		watch: {
 			$route (to) {
 				this.selected = this.getIndexFromRoute(to.path)
+			},
+			'$store.state.username' (username) {
+				if(!username) {
+					this.$router.push('/')
+				}
 			}
 		},
 		mounted () {
@@ -48,6 +53,14 @@
 				})
 				return selectedIndex
 			}
+		},
+		beforeRouteEnter (to, from, next) {
+			next(vm => {
+				if(!vm.$store.state.username) {
+					vm.$store.commit('setAccountModalState', true);
+					next('/')
+				}
+			})
 		}
 	}
 </script>

@@ -13,7 +13,7 @@ let bodyParser = require('body-parser')
 let morgan = require('morgan')
 let session = require('express-session')
 
-app.use(cors({origin: 'http://localhost:8080'}));
+app.use(cors({origin: ['http://localhost:8080', 'http://localhost:8081']}));
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(session({
