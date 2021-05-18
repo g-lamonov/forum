@@ -20,46 +20,51 @@
 
 <style lang='scss' scoped>
 	@import '../assets/scss/variables.scss';
-	.post_placeholder {
+	.thread_display_placeholder {
+		display: flex;
+		padding: 0.75rem;
+		background-color: #fff;
+		border-radius: 0.25rem;
+		margin-bottom: 1rem;
+		transition: background-color 0.2s;
 		position: relative;
-		border-bottom: thin solid $color__gray--primary;
-		transition: background-color 0.5s;
-		margin: 0.5rem 0;
-		@at-root #{&}--last {
-			padding-bottom: 0.5rem;
-			border-bottom: thin solid $color__gray--primary;
-		}
-		@at-root #{&}__meta_data {
-			display: flex;
-			padding-top: 0.75rem;
-			position: relative;
-			margin-left: 4rem;
-		}
-		@at-root #{&}__avatar_icon {
-			position: absolute;
-			left: -4rem;
-			height: 3rem;
-			width: 3rem;
-			border-radius: 100%;
-			background-color: $color__gray--primary;
-			@include flash;
-		}
+		@extend .shadow_border;
 		@at-root #{&}__bar {
-			background-color: $color__gray--primary;
-			height: 1.5rem;
-			width: 75%;
-			margin-bottom: 0.5rem;
 			@include flash;
-			@at-root #{&}--thin {
-				height: 1rem;
-			}
+			background-color: $color__gray--primary;
+			height: 0.85rem;
+			width: 75%;
+			margin-bottom: 0.35rem;
+			@at-root #{&}--5 { width: 5%; }
+			@at-root #{&}--15 { width: 15%; }
+			@at-root #{&}--20 { width: 20%; }
 			@at-root #{&}--33 { width: 33%; }
 			@at-root #{&}--58 { width: 58%; }
-			@at-root #{&}--66 { width: 66%; }
-			@at-root #{&}--50 { width: 50%; }
 		}
+		@at-root #{&}__icon {
+			@include flash;
+			margin-right: 0.75rem;
+			margin-left: 0.25rem;
+			border-radius: 100%;
+			background-color: $color__gray--darkest;
+			height: 2.5rem;
+			width: 2.5rem;
+			font-size: 2rem;
+			line-height: 2.25rem;
+		}
+	
+		@at-root #{&}__header {
+			display: flex;
+			justify-content: space-between;
+		}
+		@at-root #{&}__replies_bar {
+			display: flex;
+			justify-content: space-between;
+		}
+	
 		@at-root #{&}__content {
-			padding: 0.5rem 0 0.5rem 4rem;
+			margin-top: 0.5rem;
+			word-break: break-all;
 		}
 	}
 </style>

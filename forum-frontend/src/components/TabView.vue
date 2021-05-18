@@ -44,7 +44,9 @@
 
 <style lang='scss' scoped>
 	@import '../assets/scss/variables.scss';
+	
 	.tab_view {
+		border-radius: 0.25rem;
 		@at-root #{&}__tabs {
 			display: flex;
 			@at-root #{&}--small_tabs {

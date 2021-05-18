@@ -15,13 +15,13 @@
 		<div class='post__meta_data'>
 			<avatar-icon :user='post.User' class='post__avatar'></avatar-icon>
 			<div class='post__thread' v-if='showThread' @click='goToThread'>{{post.Thread.name}}</div>
-			<div class='post__user' v-else>{{post.User.username}}</div>
+			<div class='post__user' v-else>{{username}}</div>
 			<replying-to
 				style='margin-right: 0.5rem;'
 				v-if='post.replyingToUsername'
 				:replyId='post.replyId'
 				:username='post.replyingToUsername'
-				@click='$emit("goToPost", post.replyId)'
+				@click='$emit("goToPost", post.replyId, true)'
 			></replying-to>
 			<div class='post__date'>{{post.createdAt | formatDate('time|date', ', ')}}</div>
 		</div>
@@ -36,7 +36,7 @@
 					:key='reply'
 					:post='reply'
 					:hover='hover'
-					@click='$emit("goToPost", reply.id)'
+					@click='$emit("goToPost", reply.postNumber)'
 				></post-reply>
 			</div>
 			<div
@@ -56,6 +56,7 @@
 
 <script>
 	import PostReply from './PostReply'
+	// import HeartButton from './HeartButton'
 	import ModalWindow from './ModalWindow'
 	import FancyInput from './FancyInput'
 	import ReplyingTo from './ReplyingTo'
@@ -69,7 +70,8 @@
 			ModalWindow,
 			FancyInput,
 			ReplyingTo,
-			AvatarIcon
+			AvatarIcon,
+			// HeartButton
 		},
 		data () {
 			let post = this.post
@@ -77,6 +79,15 @@
 				hover: false,
 				showShareModal: false,
 				postURL: `${location.origin}/thread/${post.Thread.slug}/${post.ThreadId}/${post.postNumber}`
+			}
+		},
+		computed: {
+			username () {
+				if(this.post.User) {
+					return this.post.User.username
+				} else {
+					return '[deleted]'
+				}
 			}
 		},
 		methods: {
@@ -111,7 +122,7 @@
 	}
 	.post {
 		position: relative;
-		border-top: thin solid $color__gray--primary;
+		border-bottom: thin solid $color__gray--primary;
 		transition: background-color 0.5s;
 		margin: 0.5rem 0;
 		@at-root #{&}--highlighted {
@@ -122,8 +133,8 @@
 			animation-duration: 0.25s;
 		}
 		@at-root #{&}--last {
-			padding-bottom: 0.5rem;
-			border-bottom: thin solid $color__gray--primary;
+			border-bottom: none;
+			margin-bottom: 0;
 		}
 		@at-root #{&}__meta_data {
 			display: flex;

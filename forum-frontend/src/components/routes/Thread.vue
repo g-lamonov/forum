@@ -28,29 +28,31 @@
 				@loadNext='loadNextPosts'
 				@loadPrevious='loadPreviousPosts'
 			>
+				<div v-if='$store.state.thread.loadingPosts === "previous"'>
 				<thread-post-placeholder
-					v-if='$store.state.thread.loadingPosts === "previous"'
 					v-for='n in $store.state.thread.previousPostsCount'
 					:key='n'
 				>
 				</thread-post-placeholder>
+				</div>
 				<thread-post
 					v-for='(post, index) in posts'
 					:key='post'
 					@reply='replyUser'
-					@goToPost='$router.push({ params: { post_number: post.postNumber } })'
+					@goToPost='goToPost'
 					:post='post'
 					:show-reply='true'
 					:highlight='highlightedPostIndex === index'
 					:class='{"post--last": index === posts.length-1}'
 					ref='posts'
 				></thread-post>
+				<div v-if='$store.state.thread.loadingPosts === "next"'>
 				<thread-post-placeholder
-					v-if='$store.state.thread.loadingPosts === "next"'
 					v-for='n in $store.state.thread.nextPostsCount'
 					:key='n'
 				>
 				</thread-post-placeholder>
+				</div>
 			</scroll-load>
 		</div>
 	</div>
@@ -136,9 +138,21 @@
 			loadInitialPosts () {
 				this.$store.dispatch('loadInitialPostsAsync', this)
 			},	
-			goToPost (number) {
-				this.$router.push({ params: { post_number: number } })
-				this.loadInitialPosts()
+			goToPost (number, getPostNumber) {
+				let pushRoute = postNumber => {
+					if(this.$route.params.post_number === postNumber) {
+						this.highlightPost(postNumber)
+					} else {
+						this.$router.push({ name: 'thread-post', params: { post_number: postNumber } })
+					}
+				}
+				if(getPostNumber) {
+					this.axios
+						.get('/api/v1/post/' + number)
+						.then(res => pushRoute(res.data.postNumber) )
+				} else {
+					pushRoute(number)
+				}
 			},
 			scrollTo (postNumber, cb) {
 				for(var i = 0; i < this.posts.length; i++) {
@@ -200,7 +214,6 @@
 				text-align: center;
 				left: 0;
 				font-size: 2rem;
-				color: #fff;
 				top: 0.5rem;
 				opacity: 0;
 				pointer-events: none;
@@ -220,5 +233,8 @@
 	}
 	.posts {
 		width: 80%;
+		background-color: #fff;
+		padding: 0.5rem 1rem;
+		border-radius: 0.25rem;
 	}
 </style>

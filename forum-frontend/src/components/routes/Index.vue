@@ -6,7 +6,7 @@
 				v-model='selectedFilterOption'
 				class='thread_sorting__filter'
 			></select-options>
-			<button class='button' v-if='this.$store.state.username' @click='$router.push("/thread/new")'>Post new thread</button>
+			<button class='button button--blue' v-if='this.$store.state.username' @click='$router.push("/thread/new")'>Post new thread</button>
 		</div>
 		<div class='threads_main'>
 			<div class='threads_main__side_bar'>
@@ -24,7 +24,12 @@
 						class='threads_main__side_bar__menu_item__border'
 						:style='{"background-color": category.color}'
 					></span>
-					{{category.name}}
+					<span
+						class='threads_main__side_bar__menu_item__text'
+						:style='{
+							"color": category.value === selectedCategory ? category.color : undefined
+						}'
+					>{{category.name}}</span>
 				</div>
 			</div>
 			<scroll-load
@@ -33,14 +38,19 @@
 				:loading='loading'
 				@loadNext='getThreads'
 			>
-				<div v-if='loadingNewer'><thread-display-placeholder v-for='n in newThreads' :key='n'></thread-display-placeholder></div>
+				<div v-if='loadingNewer'>
+				<thread-display-placeholder v-for='n in newThreads' :key='n'></thread-display-placeholder>
+				</div>
 				<div class='threads_main__load_new' v-if='newThreads' @click='getNewerThreads'>
 					Load {{newThreads}} new {{newThreads | pluralize('thread')}}
 				</div>
-				<div v-if='loading'><thread-display v-for='thread in filteredThreads' :key='thread' :thread='thread'></thread-display></div>
-			<thread-display-placeholder v-for='n in nextThreadsCount' :key='n'></thread-display-placeholder>
+				<thread-display v-for='thread in filteredThreads' :key='thread' :thread='thread'></thread-display>
+				<div v-if='loading'><thread-display-placeholder v-for='n in nextThreadsCount' :key='n'></thread-display-placeholder></div>
 			</scroll-load>
-			<div v-else class='threads_main__threads thread--empty'>No threads or posts.</div>
+			<div v-else class='threads_main__threads thread--empty'>
+				<span class='fa fa-exclamation-circle'></span>
+				No threads or posts.
+			</div>
 		</div>
 	</div>
 </template>
@@ -51,11 +61,8 @@
 	import ThreadDisplay from '../ThreadDisplay'
 	import ThreadDisplayPlaceholder from '../ThreadDisplayPlaceholder'
 	import SelectOptions from '../SelectOptions'
-
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
-
 	let socket = require('socket.io-client')()
-
 	export default {
 		name: 'index',
 		components: {
@@ -76,7 +83,6 @@
 				nextURL: '',
 				nextThreadsCount: 0,
 				loading: false,
-
 				threads: [],
 				newThreads: 0,
 				loadingNewer: false
@@ -129,18 +135,22 @@
 			},
 			getThreads (initial) {
 				if(this.nextURL === null && !initial) return
+
+				let URL = '/api/v1/category/' + this.selectedCategory
+				if(!initial) {
+					URL = this.nextURL || URL
+				}
+
 				this.loading = true
 				this.axios
-					.get(this.nextURL || '/api/v1/category/' + this.selectedCategory)
+					.get(URL)
 					.then(res => {
 						this.loading = false
-
 						if(initial) {
 							this.threads = res.data.Threads
 						} else {
 							this.threads.push(...res.data.Threads)
 						}
-
 						this.nextURL = res.data.meta.nextURL
 						this.nextThreadsCount = res.data.meta.nextThreadsCount
 					})
@@ -150,6 +160,7 @@
 					})
 			},
 			getNewerThreads () {
+				this.loadingNewer = true
 				this.axios
 					.get('/api/v1/category/' + this.selectedCategory + '?limit=' + this.newThreads)
 					.then(res => {
@@ -176,7 +187,6 @@
 		created () {
 			this.selectedCategory = this.$route.path.split('/')[2].toUpperCase()
 			this.getThreads(true)
-
 			socket.on('new thread', data => {
 				if(data.value === this.selectedCategory || this.selectedCategory == 'ALL') {
 					this.newThreads++
@@ -207,9 +217,14 @@
 		}
 	}
 	.threads_main__side_bar {
-		width: 10rem;
-		border-right: thin solid $color__gray--primary;
-		margin-top: 0.5rem;
+		width: 12rem;
+		height: 0%;
+		@extend .shadow_border;
+		background: #fff;
+		margin-top: 0.15rem;
+		margin-right: 1rem;
+		border-radius: 0.25rem;
+		padding: 0.5rem 0 1rem 1rem;
 		@at-root #{&}__title {
 			cursor: default;
 			font-weight: 500;
@@ -222,28 +237,29 @@
 			position: relative;
 			#{&}__border {
 				display: inline-block;
-				width: 0.2rem;
-				z-index: 1;
-				height: 100%;
-				position: absolute;
-				left: -0.75rem;
-				opacity: 0;
-				top: 0.1rem;
+				height: 0.75rem;
+				width: 0.75rem;
+				border-radius: 0.25rem;
+				opacity: 0.5;
 				background-color: $color__gray--darkest;
+				position: relative;
+				top: 0.05rem;
 				transition: all 0.2s;
 			}
 			&:hover #{&}__border {
-				left: -0.5rem;
 				opacity: 1;
 			}
 			&:active #{&}__border {
 				filter: brightness(0.8);
 			}
+			#{&}__text {
+				filter: saturate(0.75), brightness(0.75);
+			}
+			
 			#{&}--selected {
 				font-weight: 500;
 				.threads_main__side_bar__menu_item__border {
 					opacity: 1;
-					left: -0.5rem;
 					&:active {
 						filter: brightness(1);
 					}
@@ -257,7 +273,6 @@
 		margin-left: 1rem;
 		width: calc(100% - 11rem);
 	}
-
 	.threads_main__load_new {
 		@extend .button;
 		font-size: 1.25rem;
@@ -267,7 +282,6 @@
 		width: 100%;
 		font-weight: 300;
 	}
-
 	.thread {
 		background-color: #fff;
 		padding: 0.5rem 0;
@@ -293,6 +307,7 @@
 		}
 		@at-root #{&}--empty {
 			display: flex;
+			flex-direction: column;
 			align-items: center;
 			justify-content: center;
 			padding-right: 5rem;
@@ -300,9 +315,10 @@
 			user-select: none;
 			cursor: default;
 			transition: none;
-			&:hover {
-				transition: none;
-				background-color: #fff;
+			color: $color__gray--darkest;
+			span {
+				font-size: 4rem;
+				color: $color__gray--darker;
 			}
 		}
 		@at-root #{&}__section {

@@ -1,5 +1,5 @@
 <template>
-	<div class='route_container'>
+	<div class='route_container user_route'>
 		<div class='user_header'>
 			<div
 				class='user_header__icon'
@@ -10,10 +10,8 @@
 			<div class='user_header__info'>
 				<span class='user_header__username'>{{username}}</span>
 				<span class='user_header__date' v-if='user'>Account created {{user.createdAt | formatDate('date') }}</span>
+				<div class='user_description' v-if='user && user.description && user.description.length' v-html='user.description'></div>
 			</div>
-			<div></div>
-		</div>
-		<div class='user_description' v-if='user' v-html='user.description'>
 		</div>
 		<div class='user__view_holder'>
 			<div class='user__links'>
@@ -76,10 +74,16 @@
 
 <style lang='scss' scoped>
 	@import '../../assets/scss/variables.scss';
+	.user_route {
+		width: 70%;
+	}
 	.user_header {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		margin-bottom: 1.5rem;
+		background-color: #fff;
+		padding: 1rem;
+		border-radius: 0.25rem;
 		@at-root #{&}__icon {
 			height: 4rem;
 			width: 4rem;
@@ -94,7 +98,7 @@
 			display: flex;
 			flex-direction: column;
 			margin-left: 1rem;
-			height: 4rem;
+			width: calc(100% - 6rem);
 		}
 		@at-root #{&}__username {
 			margin-top: -0.25rem;
@@ -107,16 +111,14 @@
 		}
 	}
 	.user_description {
-		width: 75%;
 		white-space: pre-line;
-		margin: -1rem 0 1.5rem 5rem;
+		margin-top: 0.5rem;
 	}
 	.user__view_holder {
 		display: flex;
-		width: calc(75% + 5rem);
 	}
 	.user__links {
-		width: 10rem;
+		width: 8rem;
 		display: table;
 		@at-root #{&}__menu_item {
 			cursor: pointer;
@@ -141,5 +143,6 @@
 	}
 	.user__view {
 		flex-grow: 1;
+		width: 0;
 	}
 </style>

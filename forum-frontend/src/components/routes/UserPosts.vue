@@ -83,6 +83,10 @@
 <style lang='scss' scoped>
 	@import '../../assets/scss/variables.scss';
 	.user_posts {
+		background: #fff;
+		border-radius: 0.25rem;
+		padding: 1rem;
+		
 		@at-root #{&}__title {
 			font-size: 1.5rem;
 			margin-bottom: 1rem;

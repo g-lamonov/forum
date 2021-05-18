@@ -1,7 +1,7 @@
 <template>
 	<div id='app'>
 		<modal-window v-model='showAjaxErrorsModal' style='z-index: 100' width='25rem'>
-			<div style='padding: 0rem 1rem 1rem 1rem;'>
+			<div style='padding: 0rem 1rem 1rem 1rem; border-radius: 0.25rem;'>
 				<p v-for='error in this.$store.state.ajaxErrors' :key='error'>{{error}}</p>
 				<button class='button button--modal' @click='showAjaxErrorsModal = false'>OK</button>
 			</div>
@@ -77,10 +77,10 @@
 			</div>
 			<div class='header__group'>
 				<template v-if='$store.state.username'>
-					<button @click='$router.push("/settings")' class='button button--blue' >
+					<button @click='$router.push("/settings")' class='button' >
 						Settings
 					</button>
-					<loading-button @click='logout' class='button--blue' :loading='loadingLogout'>
+					<loading-button @click='logout' :loading='loadingLogout'>
 						Log out
 					</loading-button>
 				</template>
@@ -88,7 +88,7 @@
 					<div class='button button--green' @click='showAccountModalTab(0)'>
 						Sign up
 					</div>
-					<div class='button button--blue' @click='showAccountModalTab(1)'>
+					<div class='button' @click='showAccountModalTab(1)'>
 						Login
 					</div>
 				</template>
@@ -275,12 +275,6 @@
 		created () {
 			this.axios.get('/api/v1/settings')
 				.then(res => {
-					let usernameCookie = document.cookie
-						.split(';')
-						.map(c => c.split('='))
-						.filter(pair => pair[0].trim() === 'username')
-						.map(pair => pair[1])[0]
-					if(usernameCookie) this.$store.commit('setUsername', usernameCookie)
 					this.$store.commit('setForumName', res.data.forumName)
 				}).catch(err => {
 					if(err.response.data.errors[0].name === 'noSettings') {
@@ -330,9 +324,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		border-bottom: 0.125rem solid $color__blue--darker;
-		background-color: $color__blue--primary;
-		color: #fff;
+		border-bottom: 0.125rem solid $color__gray--primary;
+		background-color: #fff;
 		@at-root #{&}__group {
 			display: flex;
 			> * { margin: 0 0.5rem; }
@@ -346,27 +339,22 @@
 		cursor: pointer;
 	}
 	.search {
-		background-color: $color__blue--darker;
-		border: 0.125rem solid $color__blue--darkest;
+		border: 0.125rem solid $color__gray--primary;
+		border-radius: 0.25rem;
 		@at-root #{&}__field {
 			outline: none;
 			height: 100%;
 			padding: 0 0.5rem;
 			border: 0;
-			background-color: $color__blue--darker;
 			@include text;
-			color: #fff;
+			color: $color__text--primary;
 			@include placeholder {
 				@include text;
-				color: $color__lightgray--darker;
+				color: $color__lightgray--darkest;
 			}
 		}
 		@at-root #{&}__button {
-			background-color: $color__blue--darker;
-			color: #fff;
-			&:hover {
-				background-color: $color__blue--primary;
-			}
+			border-radius: 0;
 		}
 	}
 </style>
