@@ -29,15 +29,27 @@
 		<div class='post__footer' :class='{ "post__footer--show": hover }'>
 			<div
 				class='post__footer_group'
-				:class='{ "post__footer_group--replies": post.Replies.length }'
 			>
-				<post-reply
-					v-for='reply in post.Replies'
-					:key='reply'
-					:post='reply'
-					:hover='hover'
-					@click='$emit("goToPost", reply.postNumber)'
-				></post-reply>
+				<div class='post__footer_sub_group'>
+					<heart-button
+						v-model='liked'
+						:likes='post.Likes'
+						:likeable='$store.state.username && $store.state.username !== post.User.username'
+						@change='emitLikeUpdate'
+					></heart-button>
+				</div>
+				<div class='post__footer_sub_group' v-if='post.Replies.length'>
+						<span class='post__footer_sub_group__text post__footer_sub_group__text--replies'>replies</span>
+					<post-reply
+						v-for='(reply, index) in post.Replies'
+						:key='reply'
+						:post='reply'
+						:hover='hover'
+						:first='index === 0'
+						@click='$emit("goToPost", reply.postNumber)'
+					></post-reply>
+				</div>
+				
 			</div>
 			<div
 				class='post__footer_group'>
@@ -56,7 +68,7 @@
 
 <script>
 	import PostReply from './PostReply'
-	// import HeartButton from './HeartButton'
+	import HeartButton from './HeartButton'
 	import ModalWindow from './ModalWindow'
 	import FancyInput from './FancyInput'
 	import ReplyingTo from './ReplyingTo'
@@ -71,7 +83,7 @@
 			FancyInput,
 			ReplyingTo,
 			AvatarIcon,
-			// HeartButton
+			HeartButton
 		},
 		data () {
 			let post = this.post
@@ -88,6 +100,9 @@
 				} else {
 					return '[deleted]'
 				}
+			},
+			liked () {
+				return this.post.Likes.some(u => u.username === this.$store.state.username)
 			}
 		},
 		methods: {
@@ -99,6 +114,9 @@
 			},
 			goToThread () {
 				this.$router.push(`/thread/${this.post.Thread.slug}/${this.post.Thread.id}`)
+			},
+			emitLikeUpdate (state) {
+				this.$emit('like', this.post.id, state)
 			}
 		}
 	}
@@ -166,31 +184,30 @@
 			padding: 0.5rem 0 0.5rem 4rem;
 		}
 		@at-root #{&}__footer {
-			padding: 0.5rem 0 0.75rem 4rem;
+			padding: 0.5rem 0 0.75rem 0.5rem;
 			display: flex;
 			align-items: baseline;
 			justify-content: space-between;
-			opacity: 0.75;
+			opacity: 0.6;
 			transition: opacity 0.2s;
 			@at-root #{&}--show {
 				opacity: 1;
 				transition: opacity 0.2s;
 			}
-			@at-root #{&}_group {
+			@at-root #{&}_sub_group {
+				display: flex;
 				align-items: baseline;
+				margin-right: 1rem;
+				@at-root #{&}__text {
+					font-variant: small-caps;
+					margin: 0 0.25rem;
+					margin-left: 0;
+				}
+			}
+			@at-root #{&}_group {
+				align-items: center;
 				display: inline-flex;
 				position: relative;
-				@at-root #{&}--replies {
-					&::before {
-						content: 'Replies:';
-						bottom: 0.25rem;
-						left: -3.75rem;
-						font-size: 0.9rem;
-						position: absolute;	
-						color: $color__darkgray--primary;
-						transition: opacity 0.2s, bottom 0.2s;
-					}
-				}
 			}
 		}
 		@at-root #{&}__action {
