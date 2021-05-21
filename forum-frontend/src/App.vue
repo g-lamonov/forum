@@ -77,11 +77,12 @@
 			</div>
 			<div class='header__group'>
 				<template v-if='$store.state.username'>
+					<notification-button></notification-button>
 					<button @click='$router.push("/settings")' class='button' >
 						Settings
 					</button>
 					<loading-button @click='logout' :loading='loadingLogout'>
-						Log out, {{$store.state.username}}
+						Log out
 					</loading-button>
 				</template>
 				<template v-else>
@@ -107,6 +108,7 @@
 	import TabView from './components/TabView'
 	import FancyInput from './components/FancyInput'
 	import LoadingButton from './components/LoadingButton'
+	import NotificationButton from './components/NotificationButton'
 	// import mapGetters from 'vuex'
 	import AjaxErrorHandler from './assets/js/errorHandler'
 	let { addFlexBoxChildren } = require('./assets/js/flexBoxGridCorrect')
@@ -116,7 +118,8 @@
 			ModalWindow,
 			TabView,
 			FancyInput,
-			LoadingButton
+			LoadingButton,
+			NotificationButton
 		},
 		data () {
 			return {
@@ -194,6 +197,7 @@
 				).then(() => {
 					this.loadingLogout = false
 					this.$store.commit('setUsername', '')
+					this.$router.push('/')
 				}).catch(err => {
 					this.loadingLogout = false
 					this.ajaxErrorHandler(err)
@@ -291,7 +295,7 @@
 </script>
 
 <style lang='scss'>
-	@import url('https://fonts.googleapis.com/css?family=Lato:300,300i,400|Montserrat');
+	@import url('https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i|Montserrat');
 	@import './assets/scss/variables.scss';
 	@import './assets/scss/elementStyles.scss';
 	html, body {

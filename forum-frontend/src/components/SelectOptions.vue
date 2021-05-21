@@ -2,7 +2,7 @@
 	<div class='select_options'>
 		<button
 			v-for='option in options'
-            v-bind:key="option"
+            :key="option"
 			class='button'
 			:class='{"button--orange": option.value === selected}'
 			@click='select(option.value)'

@@ -16,7 +16,6 @@
 		</header>
 		<input-editor
 			v-model='editor'
-			:float='true'
 			:show='editorState'
 			:replyUsername='replyUsername'
 			v-on:close='hideEditor'
@@ -40,7 +39,6 @@
 					:key='post'
 					@reply='replyUser'
 					@goToPost='goToPost'
-					@like='updatePostLike'
 					:post='post'
 					:show-reply='true'
 					:highlight='highlightedPostIndex === index'
@@ -65,6 +63,7 @@
 	import ThreadPost from '../ThreadPost'
 	import ThreadPostPlaceholder from '../ThreadPostPlaceholder'
 	import throttle from 'lodash.throttle'
+	
 	// import AjaxErrorHandler from '../../assets/js/errorHandler'
 	export default {
 		name: 'Thread',
@@ -127,17 +126,6 @@
 			},
 			addPost () {
 				this.$store.dispatch('addPostAsync', this);
-			},
-			updatePostLike (id, state) {
-				if(state) {
-					this.axios
-						.put('/api/v1/post/' + id + '/like')
-						.catch(AjaxErrorHandler(this.$store))
-				} else {
-					this.axios
-						.delete('/api/v1/post/' + id + '/like')
-						.catch(AjaxErrorHandler(this.$store))
-				}
 			},
 			loadNextPosts () {
 				let vue = this
@@ -206,6 +194,14 @@
 			setHeader();
 			document.addEventListener('scroll', throttle(setHeader, 200));
 			this.loadInitialPosts()
+			this.$socket.emit('join', 'thread/' + this.$route.params.id)
+			this.$socket.on('new post', post => {
+				this.$store.dispatch('loadNewPostsSinceLoad', post)
+			})
+		},
+		destroyed () {
+			this.$socket.emit('leave', 'thread/' + this.$route.params.id)
+			this.$socket.off('new post')
 		}
 	}
 </script>

@@ -62,7 +62,7 @@
 	import ThreadDisplayPlaceholder from '../ThreadDisplayPlaceholder'
 	import SelectOptions from '../SelectOptions'
 	import AjaxErrorHandler from '../../assets/js/errorHandler'
-	let socket = require('socket.io-client')()
+
 	export default {
 		name: 'index',
 		components: {
@@ -187,14 +187,16 @@
 		created () {
 			this.selectedCategory = this.$route.path.split('/')[2].toUpperCase()
 			this.getThreads(true)
-			socket.on('new thread', data => {
+			this.$socket.emit('join', 'index')
+			this.$socket.on('new thread', data => {
 				if(data.value === this.selectedCategory || this.selectedCategory == 'ALL') {
 					this.newThreads++
 				}
 			})
 		},
 		destroyed () {
-			socket.off('new thread')
+			this.$socket.emit('leave', 'index')
+			this.$socket.off('new thread')
 		}
 	}
 </script>

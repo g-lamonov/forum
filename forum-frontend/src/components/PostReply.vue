@@ -36,7 +36,7 @@
 					}, this.post.User)
 				} else {
 					return {
-						letter: '',
+						letter: ' ',
 						color: null,
 						username: '[deleted]'
 					}
