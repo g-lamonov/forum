@@ -21,6 +21,7 @@
 				<input-editor-core
 					v-model='editor'
 					:error='errors.content'
+					@mentions='setMentions'
 					@focus='setFocusInput(true)'
 					@blur='setFocusInput(false)'
 				></input-editor-core>
@@ -29,7 +30,7 @@
 				<div class='editor__format_bar editor__format_bar--preview'>
 					preview
 				</div>
-				<input-editor-preview :value='editor'></input-editor-preview>
+				<input-editor-preview :value='editor' :mentions='mentions'></input-editor-preview>
 			</div>
 		</div>
 		<loading-button class='button--green submit' :loading='loading' @click='postThread'>Post thread</loading-button>
@@ -57,6 +58,7 @@
 			return {
 				selectedCategory: this.$store.state.category.selectedCategory,
 				editor: '',
+				mentions: [],
 				name: '',
 				loading: false,
 				focusInput: false,
@@ -86,7 +88,8 @@
 				}).then(res => {
 					return this.axios.post('/api/v1/post', {
 						threadId: res.data.id,
-						content: this.editor
+						content: this.editor,
+						mentions: this.mentions
 					})
 				}).then(res => {
 					this.loading = false
@@ -105,6 +108,9 @@
 			},
 			setFocusInput (val) {
 				this.focusInput = val
+			},
+			setMentions (mentions) {
+				this.mentions = mentions
 			}
 		},
 		watch: {

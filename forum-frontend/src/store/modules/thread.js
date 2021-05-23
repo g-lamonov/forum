@@ -12,6 +12,7 @@ const state = {
 		show: false,
 		value: ''
 	},
+	mentions: [],
 	loadingPosts: false,
 	nextURL: '',
 	previousURL: '',
@@ -29,8 +30,15 @@ const getters = {
 
 const actions = {
 	addPostAsync ({ state, commit }, vue) {
+		let content = state.editor.value
+		state.mentions.forEach(mention => {
+			let regexp = new RegExp('(^|\\s)@' + mention + '($|\\s)')
+			content = content.replace(regexp, `$1[@${mention}](/user/${mention})$2`)
+		})
+
 		var post = {
-			content: state.editor.value,
+			content,
+			mentions: state.mentions,
 			threadId: +vue.$route.params.id
 		};
 
@@ -128,7 +136,7 @@ const actions = {
 			let baseURL = '/api/v1/thread/' + state.threadId + '?limit=10&from='
 
 			commit('incrementNextPostsCount')
-
+			
 			if(nextURL === null) {
 				commit('setNextURL', baseURL + (post.postNumber-1))
 			}
@@ -195,6 +203,9 @@ const mutations = {
 	},
 	incrementNextPostsCount (state) {
 		state.nextPostsCount++
+	},
+	setMentions (state, mentions) {
+		state.mentions = mentions
 	}
 }
 

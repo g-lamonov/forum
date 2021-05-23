@@ -2,7 +2,7 @@ let express = require('express')
 let router = express.Router()
 
 const Errors = require('../lib/errors')
-let { User, Thread, Post } = require('../models')
+let { User, Thread, Post, Notification } = require('../models')
 
 router.get('/:post_id', async (req, res) => {
 	try {
@@ -40,7 +40,7 @@ router.put('/:post_id/like', async (req, res) => {
 	try {
 		let post = await Post.findById(req.params.post_id)
 		let user = await User.findOne({ where: { username: req.session.username }})
-
+		
 		if(!post) throw Errors.invalidParameter('id', 'post does not exist')
 		if(post.UserId === user.id) throw Errors.cannotLikeOwnPost
 
@@ -69,7 +69,7 @@ router.delete('/:post_id/like', async (req, res) => {
 	try {
 		let post = await Post.findById(req.params.post_id)
 		let user = await User.findOne({ where: { username: req.session.username }})
-
+		
 		if(!post) throw Errors.invalidParameter('id', 'post does not exist')
 
 		await post.removeLikes(user)
@@ -108,6 +108,14 @@ router.post('/', async (req, res) => {
 			validationErrors.push(Errors.invalidParameterType('threadId', 'integer'))
 		} if(req.body.replyingToId !== undefined && !Number.isInteger(req.body.replyingToId)) {
 			validationErrors.push(Errors.invalidParameterType('replyingToId', 'integer'))
+		} if(req.body.mentions !== undefined) {
+			if(Array.isArray(req.body.mentions)) {
+				if(req.body.mentions.some(m => typeof m !== 'string')) {
+					validationErrors.push(Errors.invalidParameterType('mention', 'string'))
+				}
+			} else {
+				validationErrors.push(Errors.invalidParameterType('mentions', 'array'))
+			}
 		}
 
 		if(validationErrors.length) throw Errors.VALIDATION_ERROR
@@ -146,6 +154,12 @@ router.post('/', async (req, res) => {
 
 		await thread.increment('postsCount')
 
+		if(req.body.mentions) {
+			for(var i = 0; i < req.body.mentions.length; i++) {
+				await Notification.createMention({ mention: req.body.mentions[i], user, post })
+			}
+		}
+
 		res.json(await post.reload({
 			include: Post.includeOptions()
 		}))
@@ -153,6 +167,7 @@ router.post('/', async (req, res) => {
 		req.app.get('io').to('thread/' + thread.id).emit('new post', {
 			postNumber: thread.postsCount
 		})
+
 	} catch (e) {
 		if(e === Errors.VALIDATION_ERROR) {
 			res.status(400)

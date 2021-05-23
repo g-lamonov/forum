@@ -15,12 +15,18 @@
 		},
 		sanitize: true
 	});
+	// let usernames = {}
 	export default {
 		name: 'InputEditorPreview',
-		props: ['value'],
+		props: ['value', 'mentions'],
 		computed: {
 			HTML () {
-				return Marked(this.value);
+				let replacedMd = this.value
+				;(this.mentions || []).forEach(mention => {
+					let regexp = new RegExp('(^|\\s)@' + mention + '($|\\s)')
+					replacedMd = replacedMd.replace(regexp, `$1[@${mention}](/user/${mention})$2`)
+				})
+				return Marked(replacedMd);
 			}
 		}
 	}

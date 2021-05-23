@@ -16,12 +16,13 @@
 					:error='error'
 
 					@input='emitInput'
+					@mentions='emitMentions'
 					@focus='setFocusInput(true)'
 					@blur='setFocusInput(false)'
 				></input-editor-core>
 			</template>
 			<template slot='Preview'>
-				<input-editor-preview :value='value'></input-editor-preview>
+				<input-editor-preview :value='value' :mentions='mentions'></input-editor-preview>
 			</template>
 		</tab-view>
 		
@@ -47,6 +48,7 @@
 		data () {
 			return {
 				showTab: 0,
+				mentions: [],
 				focusInput: false
 			}
 		},
@@ -60,6 +62,10 @@
 				this.emitInput('')
 				this.$emit('close')
 			},
+			emitMentions (mentions) {
+				this.mentions = mentions
+				this.$emit('mentions', mentions)
+			},
 			emitInput (val) {
 				this.$emit('input', val)
 			},
@@ -68,8 +74,11 @@
 			}
 		},
 		watch: {
-			show () {
-				this.$el.querySelector('textarea').focus()
+			show (val) {
+				let textarea
+				if(val) this.showTab = 0
+				textarea = this.$el.querySelector('textarea')
+				if(textarea) textarea.focus()
 			}
 		}
 	}
