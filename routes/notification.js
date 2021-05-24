@@ -2,7 +2,7 @@ let express = require('express')
 let router = express.Router()
 
 const Errors = require('../lib/errors')
-let { Notification, User, Post, MentionNotification } = require('../models')
+let { Notification, User, Post, PostNotification } = require('../models')
 
 router.all('*', (req, res, next) => {
 	if(req.session.loggedIn) {
@@ -21,8 +21,9 @@ router.get('/', async (req, res) => {
 			where: {
 				'UserId': req.session.UserId
 			},
+            order: [['id', 'DESC']],
 			include: [{
-				model: MentionNotification,
+				model: PostNotification,
 				include: [Post, { model: User, attributes: ['createdAt', 'username', 'color'] }]
 			}]
 		})

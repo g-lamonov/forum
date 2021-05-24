@@ -1,5 +1,10 @@
 <template>
 	<div class='route_container'>
+		<post-scrubber
+			:posts='$store.state.thread.totalPostsCount'
+			:value='$route.params.post_number || 0'
+			@input='goToPost'
+		></post-scrubber>
 		<header class='thread_header'>
 			<div
 				class='thread_header__thread_title thread_header__thread_title--app_header'
@@ -16,8 +21,10 @@
 		</header>
 		<input-editor
 			v-model='editor'
+
 			:show='editorState'
 			:replyUsername='replyUsername'
+			
 			v-on:mentions='setMentions'
 			v-on:close='hideEditor'
 			v-on:submit='addPost'
@@ -30,8 +37,8 @@
 			>
 				<div v-if='$store.state.thread.loadingPosts === "previous"'>
 				<thread-post-placeholder
-					v-for='n in $store.state.thread.previousPostsCount'
-					:key='n'
+					
+					v-for='n in $store.state.thread.previousPostsCount' :key='n'
 				>
 				</thread-post-placeholder>
 				</div>
@@ -48,8 +55,7 @@
 				></thread-post>
 				<div v-if='$store.state.thread.loadingPosts === "next"'>
 				<thread-post-placeholder
-					v-for='n in $store.state.thread.nextPostsCount'
-					:key='n'
+					v-for='n in $store.state.thread.nextPostsCount' :key='n'
 				>
 				</thread-post-placeholder>
 				</div>
@@ -63,16 +69,17 @@
 	import ScrollLoad from '../ScrollLoad'
 	import ThreadPost from '../ThreadPost'
 	import ThreadPostPlaceholder from '../ThreadPostPlaceholder'
-	import throttle from 'lodash.throttle'
-	
+	import PostScrubber from '../PostScrubber'
 	// import AjaxErrorHandler from '../../assets/js/errorHandler'
+	import throttle from 'lodash.throttle'
 	export default {
 		name: 'Thread',
 		components: {
 			InputEditor,
 			ScrollLoad,
 			ThreadPost,
-			ThreadPostPlaceholder
+			ThreadPostPlaceholder,
+			PostScrubber
 		},
 		data () {
 			return {
@@ -144,30 +151,43 @@
 			},	
 			goToPost (number, getPostNumber) {
 				let pushRoute = postNumber => {
-					if(this.$route.params.post_number === postNumber) {
+					//If postNumber is a post in `this.posts`
+					if(this.posts.find(post => post.postNumber === postNumber)) {
 						this.highlightPost(postNumber)
 					} else {
 						this.$router.push({ name: 'thread-post', params: { post_number: postNumber } })
+						this.loadInitialPosts()
 					}
 				}
+				//If `number` is actualy the postId
+				//Get the postNumber via api request
 				if(getPostNumber) {
 					this.axios
 						.get('/api/v1/post/' + number)
-						.then(res => pushRoute(res.data.postNumber) )
+						.then( res => pushRoute(res.data.postNumber) )
 				} else {
 					pushRoute(number)
 				}
 			},
 			scrollTo (postNumber, cb) {
-				for(var i = 0; i < this.posts.length; i++) {
+				let getScrollTopPosition = i => {
+					let postTop = this.$refs.posts[i].$el.getBoundingClientRect().top
+					let header = this.$refs.title.getBoundingClientRect().height
+					
+					return window.pageYOffset + postTop - header - 32
+				}
+				let scroll = (i) => {
 					let post = this.posts[i]
-					if(post.postNumber === postNumber) {
-						this.$nextTick(() => {
-							let postTop = this.$refs.posts[i].$el.getBoundingClientRect().top
-							let header = this.$refs.title.getBoundingClientRect().height
-							window.scrollTo(0, postTop - header - 32)
-							if(cb) cb(i, post)
-						})
+					window.scrollTo(0, getScrollTopPosition(i))
+					if(cb) cb(i, post)
+				}
+				for(var i = 0; i < this.posts.length; i++) {
+					if(this.posts[i].postNumber === postNumber) {
+						if(this.$refs.posts) {
+							scroll(i)
+						} else {
+							this.$nextTick(() => scroll(i))
+						}
 						break;
 					}
 				}
@@ -175,6 +195,7 @@
 			highlightPost (postNumber) {
 				this.scrollTo(postNumber, (i) => {
 					this.highlightedPostIndex = i
+					this.$router.push({ name: 'thread-post', params: { post_number: postNumber } })
 					
 					if(this.highlightedPostIndex === i) {
 						setTimeout(() => this.highlightedPostIndex = null, 3000)
@@ -182,10 +203,7 @@
 				})
 			}
 		},
-		watch: {
-			'$route': 'loadInitialPosts'
-		},
-		created () {
+		mounted () {
 			let self = this;
 			let setHeader = function() {
 				if(!self.$refs.title) return;
@@ -195,9 +213,24 @@
 					self.headerTitle = false;
 				}
 			};
+			let postInView = function() {
+				let posts = self.$refs.posts
+				if(!posts) return;
+				let topPostInView = posts.find(post => {
+					let rect = post.$el.getBoundingClientRect()
+					return (rect.top >= 0) && (rect.bottom <= window.innerHeight)
+				})
+				let postIndex = posts.indexOf(topPostInView)
+				if(postIndex > -1) {
+					let postNumber = self.posts[postIndex].postNumber
+					self.$router.push({ name: 'thread-post', params: { post_number: postNumber } })
+				}
+			};
 			setHeader();
 			document.addEventListener('scroll', throttle(setHeader, 200));
+			document.addEventListener('scroll', throttle(postInView, 200));
 			this.loadInitialPosts()
+			
 			this.$socket.emit('join', 'thread/' + this.$route.params.id)
 			this.$socket.on('new post', post => {
 				this.$store.dispatch('loadNewPostsSinceLoad', post)

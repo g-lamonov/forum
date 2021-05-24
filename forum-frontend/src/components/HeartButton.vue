@@ -19,6 +19,7 @@
 		data () {
 			return {
 				changed: false,
+				likes_: undefined,
 				liked_: false
 			}
 		},
@@ -36,7 +37,7 @@
 				get () {
 					let likes = this.post.Likes.length
 					if(this.changed) {
-						return this.liked ? likes+1 : likes-1
+						return this.likes_
 					} else {
 						return likes
 					}
@@ -53,6 +54,11 @@
 					}
 				},
 				set (val) {
+					if(this.likes_ === undefined) {
+						this.likes_ = this.post.Likes.length + (val ? 1 : -1)
+					} else {
+						this.likes_+= val ? 1 : -1
+					}
 					this.changed = true
 					this.liked_ = val
 				}

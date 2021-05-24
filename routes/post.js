@@ -132,7 +132,7 @@ router.post('/', async (req, res) => {
 		if(req.body.replyingToId) {
 			replyingToPost = await Post.findById(
 				req.body.replyingToId,
-				{ include: [Thread] }
+				{ include: [Thread, { model: User, attributes: ['username'] }] }
 			)
 
 			if(!replyingToPost) {
@@ -144,6 +144,21 @@ router.post('/', async (req, res) => {
 
 				await post.setReplyingTo(replyingToPost)
 				await replyingToPost.addReplies(post)
+
+				let replyNotification = await Notification.createPostNotification({
+					usernameTo: replyingToPost.User.username,
+					userFrom: user,
+					type: 'reply',
+					post: post
+				})
+
+				let ioUsers = req.app.get('io-users')
+				if(ioUsers[replyingToPost.User.username]) {
+					req.app
+						.get('io')
+						.to(ioUsers[replyingToPost.User.username])
+						.emit('notification', replyNotification.toJSON())
+				}
 			}
 		} else {
 			post = await Post.create({ content: req.body.content, postNumber: thread.postsCount })
@@ -155,8 +170,24 @@ router.post('/', async (req, res) => {
 		await thread.increment('postsCount')
 
 		if(req.body.mentions) {
-			for(var i = 0; i < req.body.mentions.length; i++) {
-				await Notification.createMention({ mention: req.body.mentions[i], user, post })
+			let uniqueMentions = req.body.mentions.filter((mention, pos, self) => {
+				return self.indexOf(mention) === pos
+			})
+
+			for(var i = 0; i < uniqueMentions.length; i++) {
+				let mention = uniqueMentions[i]
+				let ioUsers = req.app.get('io-users')
+
+				let mentionNotification = await Notification.createPostNotification({
+					usernameTo: mention,
+					userFrom: user,
+					type: 'mention',
+					post
+				})
+				
+				if(ioUsers[mention]) {
+					req.app.get('io').to(ioUsers[mention]).emit('notification', mentionNotification.toJSON())
+				}
 			}
 		}
 

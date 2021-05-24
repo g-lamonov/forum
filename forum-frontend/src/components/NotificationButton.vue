@@ -5,7 +5,11 @@
 			:class='{ "notification_button__overlay--show" : showMenu}'
 			@click='setShowMenu(false)'
 		></div>
-		<button class='button notification_button__button' @click='setShowMenu(!showMenu)'>
+		<button
+			class='button notification_button__button'
+			:class='{ "notification_button__button--shake": shake }'
+			@click='setShowMenu(!showMenu)'
+		>
 			<span>Notifications</span>
 			<span
 				class='notification_button__button__count'
@@ -27,11 +31,12 @@
 			></div>
 			<div class='notification_button__menu'>
 				<div
-					v-for='notification in notifications'
+					v-for='(notification, index) in notifications'
 					:key='notification'
 					class='notification_button__menu__item'
 					:class='{
-						"notification_button__menu__item--uninteracted": !notification.interacted
+						"notification_button__menu__item--uninteracted": !notification.interacted,
+						"notification_button__menu__item--no_border": index > 2
 					}'
 
 					@click='click(notification)'
@@ -50,10 +55,40 @@
 						</div>
 						<div>
 							<span class='notification_button__menu__item__link'>
-								{{notification.MentionNotification.User.username}}
+								<template v-if='notification.PostNotification.User'>
+									{{notification.PostNotification.User.username}}
+								</template>
+								<template v-else>
+									[deleted]
+								</template>
 							</span>
 							wrote
-							"{{notification.MentionNotification.Post.content | stripTags | truncate(50)}}"
+							"{{notification.PostNotification.Post.content | stripTags | truncate(50)}}"
+						</div>
+					</template>
+
+					<template v-if='notification.type === "reply"'>
+						<div class='notification_button__menu__item__header'>
+							<span>Reply to your post</span>
+							<span>
+								<span class='notification_button__menu__item__header__date'>{{notification.createdAt | formatDate }}</span>
+								<span
+									class='notification_button__menu__item__header__close'
+									@click.stop='deleteNotification(notification.id)'
+								>&times;</span>
+							</span>
+						</div>
+						<div>
+							<span class='notification_button__menu__item__link'>
+								<template v-if='notification.PostNotification.User'>
+									{{notification.PostNotification.User.username}}
+								</template>
+								<template v-else>
+									[deleted]
+								</template>
+							</span>
+							replied
+							"{{notification.PostNotification.Post.content | stripTags | truncate(50)}}"
 						</div>
 					</template>
 
@@ -76,6 +111,7 @@
 				unreadCount: 0,
 				notifications: [],
 				showMenu: false,
+				shake: false,
 				emojis: ['😢', '🤷', '😘', '😒', '😔', '💩'],
 				emojiIndex: Math.round(Math.random()*5)
 			}
@@ -120,7 +156,7 @@
 			},
 			resetUnreadCount () {
 				this.axios
-					.get('/api/v1/notification')
+					.put('/api/v1/notification')
 					.then(() => {
 						this.unreadCount = 0
 					})
@@ -154,14 +190,24 @@
 				if(!notification.interacted) {
 					this.setInteracted(notification.id)
 				}
-				if(notification.type === 'mention') {
-					this.$router.push('/p/' + notification.MentionNotification.Post.id)
+				if(notification.type === 'mention' || notification.type === 'reply') {
+					this.$router.push('/p/' + notification.PostNotification.Post.id)
+				} else if(notification.type === 'reply') {
+					this.$router.push('/p/' + notification.PostNotification.Post.id)
 				}
 				this.setShowMenu(false)
 			}
 		},
 		created () {
-			this.getNotifications()
+			if(this.$store.state.username) this.getNotifications()
+			this.$socket.on('notification', notification => {
+				this.unreadCount++
+				this.notifications.unshift(notification)
+				this.shake = true
+				setTimeout(() => {
+					this.shake = false
+				}, 1000)
+			})
 		},
 		watch: {
 			'$store.state.username': 'getNotifications'
@@ -171,6 +217,23 @@
 
 <style lang='scss' scoped>
 	@import '../assets/scss/variables.scss';
+	@keyframes shake {
+		0% {
+			position: relative;
+			left: 0;
+		}
+		25% {
+			position: relative;
+			left: -1rem;
+		}
+		75% {
+			position: relative;
+			left: 1rem;
+		}
+		100% {
+			left: 0rem;
+		}
+	}
 	.notification_button {
 		position: relative;
 		@at-root #{&}__overlay {
@@ -200,7 +263,7 @@
 		@at-root #{&}__big_triangle {
 			width: 1rem;
 			height: 1rem;
-			background-color: #fff;
+			background-color: #fafafa;
 			transform: rotate(45deg);
 			position: absolute;
 			box-shadow: 5px 5px 10px 0px rgba(0, 0, 0, 0.75);
@@ -217,18 +280,15 @@
 			border-left: 0.625rem solid transparent;
 			top: 2.4rem;
 			border-right: 0.625rem solid transparent;
-			border-bottom: 0.625rem solid #ffffff;
+			border-bottom: 0.625rem solid #fafafa;
 			position: absolute;
 			z-index: 8;
-			@at-root #{&}--empty {
-				border-bottom-color: #fafafa;
-			}
 		}
 		@at-root #{&}__menu {
 			left: calc(-50% - 1.25rem);
 			position: absolute;
 			top: 2.9rem;
-			background-color: #fff;
+			background-color: #fafafa;
 			width: 20rem;
 			border-radius: 0.25rem;
 			border: 0.125rem solid $color__gray--darker;
@@ -257,21 +317,20 @@
 				}
 			}
 			@at-root #{&}__item {
-				&:last-child {
-					border-bottom: none;
+				@at-root #{&}--no_border &:last-child {
+					border: none;
 				}
 				padding: 0.5rem;
 				border-bottom: thin solid $color__gray--primary;
 				cursor: default;
+				background-color: #fff;
 				transition: background-color 0.2s;
 				&:hover {
 					background-color: $color__lightgray--primary;
 				}
-				&:active {
-					background-color: $color__lightgray--darker;
-				}
 				@at-root #{&}--uninteracted {
 					background-color: rgba(13, 71, 161, 0.1);
+					border-bottom-color: $color__gray--darkest;
 					&:hover {
 						background-color: rgba(13, 71, 161, 0.2);
 					}
@@ -314,6 +373,12 @@
 		@at-root #{&}__button {
 			position: relative;
 			padding-right: 2.5rem;
+			@at-root #{&}--shake {
+				animation-name: shake;
+				animation-iteration-count: 4;
+				animation-duration: 0.25s;
+				animation-timing-function: ease-in-out;
+			}
 			@at-root #{&}__count {
 				position: absolute;
 				background-color: $color__blue--primary;
@@ -335,7 +400,8 @@
 					background-color: rgba(white, 0.75);
 					font-weight: 300;
 					color: initial;
-					border: 0.0125rem solid $color__blue--darker;
+					border: 0.0125rem solid transparent;
+					background-color: $color__gray--primary;
 					padding: calc(0.75rem - 4*0.0125rem);
 				}
 				@at-root #{&}--two_figure {

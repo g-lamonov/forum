@@ -82,8 +82,8 @@ Vue.filter('formatDate', function (value) {
 		let hours = sinceNow.getHours()
 		return hours + ' ' + p('hour', hours) + ' ago'
 	} else if(sinceNow <= 1000*60*60*24*2) {
-		let days = Math.floor(sinceNow / 1000*60*60*24)
-		return days + ' ' + p('day', days) + ' ago'
+		let days = Math.floor(sinceNow / (1000*60*60*24))
+		return days + ' ' + p('day', days) + ' ago at ' + value.toTimeString().slice(0, 5)
 	} else {
 		return (
 			lz(value.getDate()) + '/' +
