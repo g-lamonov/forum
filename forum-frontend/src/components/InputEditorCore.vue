@@ -159,16 +159,31 @@
 			replaceSelectedText (before, after) {
 				var selectionData = this.getSelectionData();
 				var el = this.$refs.textarea;
-				this.setEditor(
-					this.value.slice(0, selectionData.start) +
-					before + selectionData.val + after +
-					this.value.slice(selectionData.end)
-				);
+				if(
+					this.value.substr(selectionData.start - before.length, before.length) === before &&
+					this.value.substr(selectionData.end, after.length) === after
+				) {
+					this.setEditor(
+						this.value.slice(0, selectionData.start - before.length) +
+						selectionData.val +
+						this.value.slice(selectionData.end + after.length)
+					);
+					setTimeout(function() {
+						el.selectionStart = selectionData.start - before.length;
+						el.selectionEnd = selectionData.end - after.length;
+					}, 0);
+				} else {
+					this.setEditor(
+						this.value.slice(0, selectionData.start) +
+						before + selectionData.val + after +
+						this.value.slice(selectionData.end)
+					);
+					setTimeout(function() {
+						el.selectionStart = selectionData.start + before.length;
+						el.selectionEnd = selectionData.end + after.length;
+					}, 0);
+				}
 				el.focus();
-				setTimeout(function() {
-					el.selectionStart = selectionData.start + before.length;
-					el.selectionEnd = selectionData.end + before.length;
-				}, 0);
 			},
 			addLink () {
 				var linkTextLength = this.linkText.length;
@@ -229,6 +244,7 @@
 		@at-root #{&}__format_button {
 			height: 1.5rem;
 			width: 1.5rem;
+			border-radius: 0.25rem;
 			text-align: center;
 			line-height: 1.4rem;
 			cursor: pointer;

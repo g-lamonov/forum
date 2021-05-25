@@ -10,6 +10,7 @@ const state = {
 	},
 	editor: {
 		show: false,
+		loading: false,
 		value: ''
 	},
 	mentions: [],
