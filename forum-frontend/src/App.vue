@@ -283,6 +283,7 @@
 				.then(res => {
 					this.$store.commit('setForumName', res.data.forumName)
 					this.$store.commit('setForumDescription', res.data.forumDescription)
+					this.$store.dispatch('setTitle', this.$store.state.meta.title)
 				}).catch(err => {
 					if(err.response.data.errors[0].name === 'noSettings') {
 						this.$router.push('/start')
@@ -291,7 +292,15 @@
 					}
 				})
 			this.axios.get('/api/v1/category')
-				.then(res => this.$store.commit('addCategories', res.data))
+				.then(res => {
+					this.$store.commit('addCategories', res.data)
+					
+					if(!this.$store.state.meta.title.length && this.$route.params.category) {
+						let selectedCategory = this.$route.params.category.toUpperCase()
+						let category = this.categories.find(c => c.value === selectedCategory)
+						this.$store.dispatch('setTitle', category.name)
+					}
+				})
 				.catch(this.ajaxErrorHandler)
 		}
 	}

@@ -16,6 +16,7 @@ chai.use(require('chai-things'))
 describe('Thread and post', () => {
 	let userAgent, replyAgent
 
+	//Wait for app to start before commencing
 	before((done) => {
 		if(server.locals.appStarted) mockData()
 
@@ -199,6 +200,114 @@ describe('Thread and post', () => {
 				res.should.have.status(400)
 				JSON.parse(res.response.text).errors.should.contain.something.that.deep.equals(Errors.invalidCategory)
 			}
+		})
+	})
+
+	describe('PUT /thread', () => {
+		let threadId
+
+		before(done => {
+			userAgent
+				.post('/api/v1/thread')
+				.set('content-type', 'application/json')
+				.send({
+					name: 'thread_lock',
+					category: 'CATEGORY_NAME'
+				})
+				.then(res => {
+					threadId = res.body.id
+
+					done()
+				})
+				.catch(done)
+		})
+
+		it('should lock the thread', async () => {
+			let res = await userAgent
+				.put('/api/v1/thread/' + threadId)
+				.set('content-type', 'application/json')
+				.send({
+					locked: true
+				})
+
+			res.should.be.json
+			res.should.have.status(200)
+			res.body.should.have.property('success', true)
+
+			let thread = await userAgent.get('/api/v1/thread/' + threadId)
+
+			thread.body.should.have.property('locked', true)
+		
+		})
+		it('should unlock the thread', async () => {
+			let res = await userAgent
+				.put('/api/v1/thread/' + threadId)
+				.set('content-type', 'application/json')
+				.send({
+					locked: false
+				})
+
+			res.should.be.json
+			res.should.have.status(200)
+			res.body.should.have.property('success', true)
+
+			let thread = await userAgent.get('/api/v1/thread/' + threadId)
+
+			thread.body.should.have.property('locked', false)
+		})
+		it('should return an error if thread does not exist', done => {
+			userAgent
+				.put('/api/v1/thread/not_a_thread')
+				.set('content-type', 'application/json')
+				.send({
+					locked: false
+				})
+				.end((err, res) => {
+					res.should.be.json
+					res.should.have.status(400)
+					res.body.errors.should.include.something.that.deep.equals(Errors.invalidParameter('threadId', 'thread does not exist'))
+
+					done()
+				})
+		})
+		it('should return an error if not logged in', done => {
+			chai.request(server)
+				.put('/api/v1/thread/' + threadId)
+				.set('content-type', 'application/json')
+				.send({
+					locked: false
+				})
+				.end((err, res) => {
+					res.should.be.json
+					res.should.have.status(401)
+					res.body.errors.should.contain.something.that.deep.equals(Errors.requestNotAuthorized)
+
+					done()
+				})
+		})
+		it('should not allow new posts if locked', done => {
+			userAgent
+				.put('/api/v1/thread/' + threadId)
+				.set('content-type', 'application/json')
+				.send({
+					locked: true
+				})
+				.end(_ => {
+					userAgent
+						.post('/api/v1/post')
+						.set('content-type', 'application/json')
+						.send({
+							content: 'new post',
+							threadId
+						})
+						.end((err, res) => {
+							res.should.be.json
+							res.should.have.status(400)
+							res.body.errors.should.contain.something.that.deep.equals(Errors.threadLocked)
+
+							done()
+						})
+				})
 		})
 	})
 

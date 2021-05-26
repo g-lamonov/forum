@@ -4,6 +4,7 @@ const state = {
 	thread: '',
 	threadId: undefined,
 	posts: [],
+	locked: false,
 	reply: {
 		username: '',
 		id: null
@@ -48,9 +49,12 @@ const actions = {
 			post.replyingToId = state.reply.id;
 		}
 
+		commit('setThreadEditorLoading', true)
+
 		vue.axios
 			.post('/api/v1/post', post)
 			.then(res => {
+				commit('setThreadEditorLoading', false)
 				commit('addPost', res.data);
 				commit('addReplyBubble', res.data)
 				commit('setThreadEditorValue', '');
@@ -62,9 +66,12 @@ const actions = {
 					id: ''
 				});
 			})
-			.catch(AjaxErrorHandler(vue.$store))
+			.catch(e => {
+				commit('setThreadEditorLoading', false)
+				AjaxErrorHandler(vue.$store)(e)
+			})
 	},
-	loadInitialPostsAsync ({ commit }, vue) {
+	loadInitialPostsAsync ({ commit, dispatch }, vue) {
 		let postNumber = vue.$route.params.post_number
 		let apiURL = '/api/v1/thread/' + vue.$route.params.id
 
@@ -75,8 +82,11 @@ const actions = {
 		vue.axios
 			.get(apiURL)
 			.then(res => {
+
 				commit('setThread', res.data)
+				dispatch('setTitle', res.data.name)
 				commit('setNextURL', res.data.meta.nextURL)
+				commit('setLocked', res.data.locked)
 				commit('setPreviousURL', res.data.meta.previousURL)
 				commit('setNextURL', res.data.meta.nextURL)
 				commit('setPreviousURL', res.data.meta.previousURL)
@@ -146,6 +156,17 @@ const actions = {
 				commit('setNextURL', baseURL + (post.postNumber-1))
 			}
 		}
+	},
+	setThreadLockedState ({ state, commit }, vue) {
+		vue.axios
+			.put('/api/v1/thread/' + state.threadId, { locked: !state.locked })
+			.then(() => {
+				commit('setLocked', !state.locked)
+			})
+			.catch((e) => {
+				console.log(e)
+				AjaxErrorHandler(vue.$store)
+			})
 	}
 }
 
@@ -183,6 +204,9 @@ const mutations = {
 	setThreadEditorValue (state, value) {
 		state.editor.value = value
 	},
+	setThreadEditorLoading (state, value) {
+		state.editor.loading = value
+	},
 	setThreadEditorState (state, value) {
 		state.editor.show = value
 	},
@@ -214,6 +238,9 @@ const mutations = {
 	},
 	setMentions (state, mentions) {
 		state.mentions = mentions
+	},
+	setLocked (state, value) {
+		state.locked = value
 	}
 }
 

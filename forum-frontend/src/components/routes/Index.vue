@@ -125,6 +125,8 @@
 			},
 			selectedCategory: {
 				set (val) {
+					let name = this.categories.find(c => c.value === val)
+					this.$store.dispatch('setTitle', name ? name.name : '')
 					this.$store.commit('setSelectedCategory', val)
 				},
 				get () {

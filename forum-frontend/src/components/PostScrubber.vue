@@ -109,9 +109,8 @@
 	@import '../assets/scss/variables.scss';
 	.post_scrubber {
 		height: 10rem;
-		position: fixed;
-		right: calc(10% + 7.5rem);
-		margin-top: 6.5rem;
+		position: relative;
+		margin-top: 2rem;
 		@at-root #{&}__line {
 			height: 100%;
 			background-color: $color__gray--darker;

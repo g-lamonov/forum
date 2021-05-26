@@ -209,6 +209,9 @@
 			finish () {
 				if(this.categories.length) this.$router.push('/')
 			}
+		},
+		mounted () {
+			this.$store.dispatch('setTitle', 'start')
 		}
 	}
 </script>

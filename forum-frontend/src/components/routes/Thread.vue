@@ -30,6 +30,10 @@
 			v-on:submit='addPost'
 		>
 		</input-editor>
+		<div class='locked_thread' v-if='$store.state.thread.locked'>
+			<h1>Thread locked</h1>
+			You can't post in this thread because it has been locked by an administrator
+		</div>
 		<div class='posts'>
 			<scroll-load
 				@loadNext='loadNextPosts'
@@ -275,6 +279,17 @@
 			right: 10%;
 			margin-top: 0.75rem;
 		}
+	}
+	.locked_thread {
+		h1 {
+			margin-top: 0;
+			margin-bottom: 0.5rem;
+		}
+		background-color: #fff;
+		padding: 2rem;
+		margin-bottom: 1rem;
+		width: 80%;
+		border-radius: 0.25rem;
 	}
 	.posts {
 		width: 80%;
