@@ -1,10 +1,18 @@
 <template>
 	<div
 		class='post'
-		:class='{"post--highlighted": highlight}'
+		:class='{
+			"post--highlighted": highlight,
+			"post--selected": selected
+		}'
 		@mouseenter='setPostFooterState(true)'
 		@mouseleave='setPostFooterState(false)'
 	>
+		<span
+			class='post__remove_icon fa fa-check'
+			:class='{"post__remove_icon--show": showSelect && !post.removed}'
+			@click='toggleSelected'
+		></span>
 		<modal-window v-model='showShareModal'>
 			<div style='padding: 0rem 1rem 1rem 1rem;'>
 				<p>Copy this URL to share the post</p>
@@ -71,7 +79,7 @@
 	// import AjaxErrorHandler from '../assets/js/errorHandler'
 	export default {
 		name: 'ThreadPost',
-		props: ['post', 'highlight', 'showReply', 'showThread'],
+		props: ['post', 'highlight', 'showReply', 'showThread', 'showSelect'],
 		components: {
 			PostReply,
 			ModalWindow,
@@ -85,7 +93,8 @@
 			return {
 				hover: false,
 				showShareModal: false,
-				postURL: `${location.origin}/p/${post.id}`
+				postURL: `${location.origin}/p/${post.id}`,
+				selected: false
 			}
 		},
 		computed: {
@@ -106,6 +115,18 @@
 			},
 			goToThread () {
 				this.$router.push(`/thread/${this.post.Thread.slug}/${this.post.Thread.id}`)
+			},
+			toggleSelected () {
+				this.selected = !this.selected
+				this.$emit('selected', this.post.id)
+			}
+		},
+		watch: {
+			showSelect () {
+				if(this.selected) {
+					this.$emit('selected', this.post.id)
+				}
+				this.selected = false
 			}
 		}
 	}
@@ -132,6 +153,8 @@
 		border-bottom: thin solid $color__gray--primary;
 		transition: background-color 0.5s;
 		margin: 0.5rem 0;
+		border-radius: 0.25rem;
+
 		@at-root #{&}--highlighted {
 			background-color: $color__lightgray--darkest;
 			animation-name: shake;
@@ -142,6 +165,30 @@
 		@at-root #{&}--last {
 			border-bottom: none;
 			margin-bottom: 0;
+		}
+		@at-root #{&}__remove_icon {
+			position: absolute;
+			right: 1rem;
+			display: inline-block;
+			top: 1rem;
+			color: #fff;
+			cursor: pointer;
+			background-color: gray;
+			z-index: 1;
+			border-radius: 100%;
+			opacity: 0;
+			pointer-events: none;
+			padding: 0.25rem;
+			transition: all 0.2s;
+			@at-root #{&}--show {
+				opacity: 1;
+				pointer-events: all;
+			}
+		}
+		@at-root #{&}--selected {
+			transform: scale(0.95);
+			padding: 1rem;
+			background-color: $color__lightgray--primary;
 		}
 		@at-root #{&}__meta_data {
 			display: flex;

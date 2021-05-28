@@ -6,6 +6,7 @@
 				<button class='button button--modal' @click='showAjaxErrorsModal = false'>OK</button>
 			</div>
 		</modal-window>
+		
 		<modal-window v-model='showAccountModal'>
 			<tab-view :tabs='["Sign up", "Login"]' v-model="showAccountTab" padding='true'>
 				<template slot='Sign up'>
@@ -107,6 +108,7 @@
 	import ModalWindow from './components/ModalWindow'
 	import TabView from './components/TabView'
 	import FancyInput from './components/FancyInput'
+	
 	import LoadingButton from './components/LoadingButton'
 	import NotificationButton from './components/NotificationButton'
 	// import mapGetters from 'vuex'
@@ -194,9 +196,10 @@
 					'/api/v1/user/' +
 					this.$store.state.username +
 					'/logout'
-				).then(() => {
+				).then(res => {
 					this.loadingLogout = false
 					this.$store.commit('setUsername', '')
+					this.$store.commit('setAdmin', res.data.admin)
 					this.$router.push('/')
 				}).catch(err => {
 					this.loadingLogout = false
@@ -240,6 +243,7 @@
 					}).then(res => {
 						this.signup.loading = false
 						this.$store.commit('setUsername', res.data.username)
+						this.$store.commit('setAdmin', res.data.admin)
 						this.closeAccountModal()
 						this.$socket.emit('login')
 					}).catch(e => {
@@ -265,6 +269,7 @@
 				}).then(res => {
 					this.login.loading = false
 					this.$store.commit('setUsername', res.data.username)
+					this.$store.commit('setAdmin', res.data.admin)
 					this.closeAccountModal()
 					this.$socket.emit('login')
 				}).catch(e => {

@@ -13,7 +13,7 @@ function setUserSession(req, res, username, UserId, admin) {
 
 	res.cookie('username', username)
 
-	if(admin) req.session.admin = true
+	if(admin) { req.session.admin = true }
 }
 router.post('/', async (req, res) => {
 	let user, adminUser, hash, token
@@ -220,6 +220,7 @@ router.post('/:username/login', async (req, res) => {
 
 				res.json({
 					username: user.username,
+					admin: user.admin,
 					success: true
 				})
 			} else {
@@ -254,6 +255,7 @@ router.post('/:username/login', async (req, res) => {
 router.post('/:username/logout', async (req, res) => {
 	req.session.destroy(() => {
 		res.clearCookie('username')
+		res.clearCookie('admin')
 		res.json({
 			success: true
 		})
@@ -370,6 +372,7 @@ router.delete('/:username', async (req, res) => {
 
 		req.session.destroy(() => {
 			res.clearCookie('username')
+			res.clearCookie('admin')
 			res.json({ success: true })
 		})
 

@@ -9,7 +9,11 @@ module.exports = (sequelize, DataTypes) => {
 			}
 		},
 		postNumber: DataTypes.INTEGER,
-		replyingToUsername: DataTypes.STRING
+		replyingToUsername: DataTypes.STRING,
+		removed: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false
+		}
 	}, {
 		instanceMethods: {
 			getReplyingTo () {

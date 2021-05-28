@@ -16,7 +16,6 @@ chai.use(require('chai-things'))
 describe('Thread and post', () => {
 	let userAgent, replyAgent
 
-	//Wait for app to start before commencing
 	before((done) => {
 		if(server.locals.appStarted) mockData()
 
@@ -55,8 +54,6 @@ describe('Thread and post', () => {
 
 	})
 
-	//Delete all rows in table after
-	//tess completed
 	after(() => {
 		sequelize.sync({ force: true })
 	})
@@ -644,6 +641,73 @@ describe('Thread and post', () => {
 				res.should.have.status(400)
 				body.errors.should.contain.something.that.deep.equals(Errors.invalidParameter('id', 'post does not exist'))
 			}
+		})
+	})
+
+	describe('DELETE /post/:id', () => {
+		let postId
+
+		before(done => {
+			userAgent
+				.post('/api/v1/thread')
+				.set('content-type', 'application/json')
+				.send({
+					name: 'delete_post_thread',
+					category: 'CATEGORY_NAME'
+				})
+				.then(res => {
+					let threadId = res.body.id
+
+					return userAgent
+						.post('/api/v1/post')
+						.set('content-type', 'application/json')
+						.send({
+							content: 'test content here',
+							threadId
+						})
+				})
+				.then(res => {
+					postId = res.body.id
+
+					done()
+				})
+				.catch(done)
+		})
+
+		it('should remove the post', async () => {
+			let res = await userAgent.delete('/api/v1/post/' + postId)
+
+			res.should.be.json
+			res.should.have.status(200)
+			res.body.should.have.property('success', true)
+
+			let post = await userAgent.get('/api/v1/post/' + postId)
+
+			post.body.should.have.property('removed', true)
+			post.body.should.have.property('content', '<p>[This post has been removed by an administrator]</p>\n')
+		
+		})
+		it('should return an error if post does not exist', done => {
+			userAgent
+				.delete('/api/v1/post/not_a_post')
+				.end((err, res) => {
+					res.should.be.json
+					res.should.have.status(400)
+					res.body.errors.should.include.something.that.deep.equals(Errors.invalidParameter('postId', 'post does not exist'))
+
+					done()
+				})
+		})
+		it('should return an error if not an admin', done => {
+			replyAgent
+				.delete('/api/v1/post/' + postId)
+				.end((err, res) => {
+					res.should.be.json
+					res.should.have.status(401)
+					res.body.errors.should.contain.something.that.deep.equals(Errors.requestNotAuthorized)
+
+					done()
+				})
 		})
 	})
 })

@@ -1,10 +1,43 @@
 <template>
 	<div class='route_container'>
-		<post-scrubber
-			:posts='$store.state.thread.totalPostsCount'
-			:value='$route.params.post_number || 0'
-			@input='goToPost'
-		></post-scrubber>
+		<div class='thread_side_bar'>
+			<loading-button
+				class='button'
+				:class='{ "button--disabled" : !$store.state.thread.selectedPosts.length }'
+				:loading='false || $store.state.thread.removePostsButtonLoading'
+				:dark='true'
+				@click='removePosts'
+				v-if='$store.state.thread.showRemovePostsButton'
+			>
+				Remove selected posts ({{$store.state.thread.selectedPosts.length}})
+			</loading-button>
+			<menu-button
+				v-if='$store.state.admin'
+				:options='[
+					{ event: "lock_thread", value: $store.state.thread.locked ? "Unlock thread" : "Lock thread" },
+					{ event: "remove_posts", value: "Remove posts" }
+				]'
+				@lock_thread='setThreadLockedState'
+				@remove_posts='setThreadSelectState'
+			>
+				<button class='button'>
+					<span class='fa fa-cogs' style='margin-right: 0.25rem;'></span>
+					Manage thread
+				</button>
+			</menu-button>
+			<button
+				class='button'
+				@click='replyThread'
+				v-if='$store.state.username && !$store.state.thread.locked'
+			>
+					Reply to thread
+			</button>
+			<post-scrubber
+				:posts='$store.state.thread.totalPostsCount'
+				:value='$route.params.post_number || 0'
+				@input='goToPost'
+			></post-scrubber>
+		</div>
 		<header class='thread_header'>
 			<div
 				class='thread_header__thread_title thread_header__thread_title--app_header'
@@ -17,7 +50,6 @@
 			<div class='thread_header__thread_title' ref='title'>
 				{{thread}}
 			</div>
-			<button class='button thread_header__reply_button' @click='replyThread' v-if='$store.state.username'>Reply to thread</button>
 		</header>
 		<input-editor
 			v-model='editor'
@@ -25,15 +57,18 @@
 			:show='editorState'
 			:replyUsername='replyUsername'
 			:loading='$store.state.thread.editor.loading'
+			
 			v-on:mentions='setMentions'
 			v-on:close='hideEditor'
 			v-on:submit='addPost'
 		>
 		</input-editor>
+
 		<div class='locked_thread' v-if='$store.state.thread.locked'>
-			<h1>Thread locked</h1>
+			<h2>Thread locked</h2>
 			You can't post in this thread because it has been locked by an administrator
 		</div>
+
 		<div class='posts'>
 			<scroll-load
 				@loadNext='loadNextPosts'
@@ -42,7 +77,8 @@
 				<div v-if='$store.state.thread.loadingPosts === "previous"'>
 				<thread-post-placeholder
 					
-					v-for='n in $store.state.thread.previousPostsCount' :key='n'
+					v-for='n in $store.state.thread.previousPostsCount'
+					:key='n'
 				>
 				</thread-post-placeholder>
 				</div>
@@ -51,15 +87,19 @@
 					:key='post'
 					@reply='replyUser'
 					@goToPost='goToPost'
+					@selected='setSelectedPosts'
 					:post='post'
-					:show-reply='true'
+					:show-reply='!$store.state.thread.locked'
+					:showSelect='$store.state.thread.showRemovePostsButton'
 					:highlight='highlightedPostIndex === index'
 					:class='{"post--last": index === posts.length-1}'
 					ref='posts'
 				></thread-post>
 				<div v-if='$store.state.thread.loadingPosts === "next"'>
 				<thread-post-placeholder
-					v-for='n in $store.state.thread.nextPostsCount' :key='n'
+					
+					v-for='n in $store.state.thread.nextPostsCount'
+					:key='n'
 				>
 				</thread-post-placeholder>
 				</div>
@@ -74,6 +114,8 @@
 	import ThreadPost from '../ThreadPost'
 	import ThreadPostPlaceholder from '../ThreadPostPlaceholder'
 	import PostScrubber from '../PostScrubber'
+	import MenuButton from '../MenuButton'
+	import LoadingButton from '../LoadingButton'
 	// import AjaxErrorHandler from '../../assets/js/errorHandler'
 	import throttle from 'lodash.throttle'
 	export default {
@@ -83,12 +125,14 @@
 			ScrollLoad,
 			ThreadPost,
 			ThreadPostPlaceholder,
-			PostScrubber
+			PostScrubber,
+			MenuButton,
+			LoadingButton
 		},
 		data () {
 			return {
 				headerTitle: false,
-				highlightedPostIndex: null
+				highlightedPostIndex: null,
 			}
 		},
 		computed: {
@@ -110,6 +154,18 @@
 			editorState () { return this.$store.state.thread.editor.show }
 		},
 		methods: {
+			removePosts () {
+				this.$store.dispatch("removePostsAsync", this)
+			},
+			setThreadLockedState () {
+				this.$store.dispatch('setThreadLockedState', this)
+			},
+			setThreadSelectState () {
+				this.$store.commit('setShowRemovePostsButton', !this.$store.state.thread.showRemovePostsButton)
+			},
+			setSelectedPosts (postId) {
+				this.$store.commit('setSelectedPosts', postId)
+			},
 			showEditor () {
 				this.$store.commit('setThreadEditorState', true);
 			},
@@ -249,6 +305,18 @@
 
 <style lang='scss' scoped>
 	@import '../../assets/scss/variables.scss';
+	.thread_side_bar {
+		position: fixed;
+		right: 10%;
+		top: 7.25rem;
+		min-width: 10rem;
+
+		.button {
+			margin-bottom: 0.75rem;
+			margin-left: -0.25rem;
+			height: 3rem;
+		} 
+	}
 	.thread_header {
 		display: flex;
 		justify-content: space-between;
@@ -273,20 +341,14 @@
 				}
 			}
 		}
-		@at-root #{&}__reply_button {
-			height: 3rem;
-			position: fixed;
-			right: 10%;
-			margin-top: 0.75rem;
-		}
 	}
 	.locked_thread {
-		h1 {
+		h2 {
 			margin-top: 0;
 			margin-bottom: 0.5rem;
 		}
 		background-color: #fff;
-		padding: 2rem;
+		padding: 1.5rem;
 		margin-bottom: 1rem;
 		width: 80%;
 		border-radius: 0.25rem;
